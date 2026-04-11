@@ -60,6 +60,7 @@ export function NotificationBell() {
           <>
             <p className="font-semibold text-zinc-200 mb-1">To get notifications on iPhone:</p>
             <ol className="list-decimal list-inside space-y-1">
+              <li>Open this page in <span className="text-zinc-200">Safari</span> (required on iOS)</li>
               <li>Tap the <span className="text-zinc-200">Share</span> button (bottom of Safari)</li>
               <li>Tap <span className="text-zinc-200">Add to Home Screen</span></li>
               <li>Open the app from your home screen</li>
