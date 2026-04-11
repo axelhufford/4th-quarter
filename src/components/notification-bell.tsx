@@ -74,11 +74,32 @@ export function NotificationBell() {
     );
   }
 
+  const sendTest = async () => {
+    setSubscribing(true);
+    try {
+      const res = await fetch("/api/test-notification", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) alert(data.error || "Failed to send test");
+    } catch {
+      alert("Failed to send test notification");
+    }
+    setSubscribing(false);
+  };
+
   if (permission === "granted") {
     return (
-      <div className="p-4 rounded-lg bg-green-900/30 border border-green-700/30 text-green-400 text-sm flex items-center gap-2">
-        <span className="text-lg">&#x2713;</span>
-        Notifications enabled — you'll be alerted when your games matter!
+      <div className="space-y-3">
+        <div className="p-4 rounded-lg bg-green-900/30 border border-green-700/30 text-green-400 text-sm flex items-center gap-2">
+          <span className="text-lg">&#x2713;</span>
+          Notifications enabled — you'll be alerted when your games matter!
+        </div>
+        <button
+          onClick={sendTest}
+          disabled={subscribing}
+          className="w-full p-3 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+        >
+          {subscribing ? "Sending..." : "Send Test Notification"}
+        </button>
       </div>
     );
   }
