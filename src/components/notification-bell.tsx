@@ -53,9 +53,22 @@ export function NotificationBell() {
   };
 
   if (permission === "unsupported") {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     return (
       <div className="p-4 rounded-lg bg-zinc-800 text-zinc-400 text-sm">
-        Push notifications are not supported in this browser.
+        {isIOS ? (
+          <>
+            <p className="font-semibold text-zinc-200 mb-1">To get notifications on iPhone:</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Tap the <span className="text-zinc-200">Share</span> button (bottom of Safari)</li>
+              <li>Tap <span className="text-zinc-200">Add to Home Screen</span></li>
+              <li>Open the app from your home screen</li>
+              <li>Come back here and enable notifications</li>
+            </ol>
+          </>
+        ) : (
+          "Push notifications are not supported in this browser."
+        )}
       </div>
     );
   }
