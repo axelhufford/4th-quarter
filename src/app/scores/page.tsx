@@ -3,6 +3,7 @@ import { fetchScoreboard } from "@/lib/espn/client";
 import { Logo, PulseDot } from "@/components/logo";
 import { TEAM_COLORS } from "@/lib/nba-teams";
 import { getLiveGameCount } from "@/lib/espn/live-count";
+import { AutoRefresh } from "@/components/auto-refresh";
 
 interface Game {
   id: string;
@@ -98,6 +99,7 @@ interface DayGames {
 export default async function ScoresPage() {
   let days: DayGames[] = [];
   let liveCount = 0;
+  let hasLive = false;
   let error = false;
 
   try {
@@ -105,7 +107,7 @@ export default async function ScoresPage() {
     const todayGames = todayData.events.map(parseGame);
     liveCount = await getLiveGameCount();
 
-    const hasLive = todayGames.some(
+    hasLive = todayGames.some(
       (g) => g.status === "in_progress" || g.status === "halftime"
     );
 
@@ -141,6 +143,7 @@ export default async function ScoresPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
+      {hasLive && <AutoRefresh intervalMs={30000} />}
       {/* Nav */}
       <nav className="flex items-center justify-between px-7 py-5 border-b border-zinc-800">
         <Link href="/" className="flex items-center gap-2.5">

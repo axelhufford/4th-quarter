@@ -6,6 +6,8 @@ import { TeamPicker } from "@/components/team-picker";
 import { NotificationBell } from "@/components/notification-bell";
 import { EmailToggle } from "@/components/email-toggle";
 import { redirect } from "next/navigation";
+import { fetchScoreboard } from "@/lib/espn/client";
+import { parseEvent } from "@/lib/espn/parse";
 
 async function saveTeams(teamIds: number[]) {
   "use server";
@@ -40,6 +42,21 @@ export default async function DashboardPage() {
     .from(users)
     .where(eq(users.id, session.user.id));
 
+  // Get ESPN IDs of teams currently playing
+  let liveEspnIds: string[] = [];
+  try {
+    const scoreboard = await fetchScoreboard();
+    const liveStatuses = new Set(["in_progress", "halftime"]);
+    for (const event of scoreboard.events) {
+      const game = parseEvent(event);
+      if (liveStatuses.has(game.status)) {
+        liveEspnIds.push(game.homeTeamEspnId, game.awayTeamEspnId);
+      }
+    }
+  } catch {
+    // Don't break the dashboard if ESPN is down
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -72,6 +89,7 @@ export default async function DashboardPage() {
           teams={allTeams}
           selectedIds={selectedIds}
           onSave={saveTeams}
+          liveEspnIds={liveEspnIds}
         />
       </div>
     </div>

@@ -1,6 +1,12 @@
 import { signIn } from "@/lib/auth/auth";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const { error } = await searchParams;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-950">
       <div className="w-full max-w-sm mx-auto p-8">
@@ -10,6 +16,12 @@ export default function LoginPage() {
             Never miss when the game gets good
           </p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-900/30 border border-red-700/30 text-red-400 text-sm text-center">
+            Something went wrong. Please try again.
+          </div>
+        )}
 
         <div className="space-y-3">
           <form

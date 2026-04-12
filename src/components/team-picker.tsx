@@ -14,9 +14,11 @@ interface TeamPickerProps {
   teams: Team[];
   selectedIds: number[];
   onSave: (teamIds: number[]) => void;
+  liveEspnIds?: string[];
 }
 
-export function TeamPicker({ teams, selectedIds, onSave }: TeamPickerProps) {
+export function TeamPicker({ teams, selectedIds, onSave, liveEspnIds = [] }: TeamPickerProps) {
+  const liveSet = new Set(liveEspnIds);
   const [selected, setSelected] = useState<Set<number>>(
     new Set(selectedIds)
   );
@@ -55,13 +57,16 @@ export function TeamPicker({ teams, selectedIds, onSave }: TeamPickerProps) {
             <button
               key={team.id}
               onClick={() => toggle(team.id)}
-              className={`px-3 py-3 rounded-lg text-sm font-medium transition-all ${
+              className={`relative px-3 py-3 rounded-lg text-sm font-medium transition-all ${
                 selected.has(team.id)
                   ? "bg-orange-500 text-white ring-2 ring-orange-400"
                   : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
               }`}
             >
               {team.abbreviation}
+              {liveSet.has(team.espnId) && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+              )}
             </button>
           ))}
         </div>
@@ -76,13 +81,16 @@ export function TeamPicker({ teams, selectedIds, onSave }: TeamPickerProps) {
             <button
               key={team.id}
               onClick={() => toggle(team.id)}
-              className={`px-3 py-3 rounded-lg text-sm font-medium transition-all ${
+              className={`relative px-3 py-3 rounded-lg text-sm font-medium transition-all ${
                 selected.has(team.id)
                   ? "bg-orange-500 text-white ring-2 ring-orange-400"
                   : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
               }`}
             >
               {team.abbreviation}
+              {liveSet.has(team.espnId) && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+              )}
             </button>
           ))}
         </div>
