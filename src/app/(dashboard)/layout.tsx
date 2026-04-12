@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import { signOut } from "@/lib/auth/auth";
+import { getLiveGameCount } from "@/lib/espn/live-count";
 
 export default async function DashboardLayout({
   children,
@@ -13,6 +14,8 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const liveCount = await getLiveGameCount();
+
   return (
     <div className="min-h-screen bg-zinc-950">
       <nav className="border-b border-zinc-800 px-6 py-4">
@@ -21,6 +24,12 @@ export default async function DashboardLayout({
             4th Quarter
           </a>
           <div className="flex items-center gap-4">
+            {liveCount > 0 && (
+              <span className="flex items-center gap-1.5 text-xs text-zinc-400">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                {liveCount} {liveCount === 1 ? "game" : "games"} live
+              </span>
+            )}
             <a
               href="/dashboard"
               className="text-sm text-zinc-400 hover:text-white transition-colors"

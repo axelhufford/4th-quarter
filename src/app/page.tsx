@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Logo, PulseDot } from "@/components/logo";
+import { getLiveGameCount } from "@/lib/espn/live-count";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const liveCount = await getLiveGameCount();
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
       {/* Nav */}
@@ -11,10 +13,12 @@ export default function LandingPage() {
           <span className="font-medium text-[15px] tracking-tight">4th Quarter</span>
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 text-xs text-zinc-400">
-            <PulseDot />
-            3 games live
-          </div>
+          {liveCount > 0 && (
+            <div className="hidden sm:flex items-center gap-2 text-xs text-zinc-400">
+              <PulseDot />
+              {liveCount} {liveCount === 1 ? "game" : "games"} live
+            </div>
+          )}
           <Link
             href="/login"
             className="border border-zinc-800 text-white px-3.5 py-1.5 rounded-md text-[13px] hover:bg-zinc-900 transition-colors"
@@ -89,7 +93,6 @@ export default function LandingPage() {
           icon={<Logo size={22} />}
           title="Q4 alerts"
           body="Push the moment the final frame tips off."
-          live
         />
         <FeatureCard
           icon={<TeamsIcon />}
