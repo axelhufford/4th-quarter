@@ -20,6 +20,12 @@ export default async function LandingPage() {
             </div>
           )}
           <Link
+            href="/scores"
+            className="text-sm text-zinc-400 hover:text-white transition-colors"
+          >
+            Scores
+          </Link>
+          <Link
             href="/login"
             className="border border-zinc-800 text-white px-3.5 py-1.5 rounded-md text-[13px] hover:bg-zinc-900 transition-colors"
           >

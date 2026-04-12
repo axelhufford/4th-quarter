@@ -31,6 +31,12 @@ export default async function DashboardLayout({
               </span>
             )}
             <a
+              href="/scores"
+              className="text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              Scores
+            </a>
+            <a
               href="/dashboard"
               className="text-sm text-zinc-400 hover:text-white transition-colors"
             >
