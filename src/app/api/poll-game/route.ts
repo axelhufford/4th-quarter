@@ -6,6 +6,7 @@ import {
   gameStates,
   teams,
   userTeams,
+  users,
   notificationPreferences,
   pushSubscriptions,
   notificationLog,
@@ -14,6 +15,7 @@ import { eq, and, or, inArray } from "drizzle-orm";
 import { detectTriggers, dedupKey, EventType } from "@/lib/notifications/triggers";
 import { buildNotification } from "@/lib/notifications/templates";
 import { sendPushNotification } from "@/lib/notifications/web-push";
+import { sendEmailNotification } from "@/lib/notifications/email";
 
 export async function POST(req: NextRequest) {
   // Verify cron secret (used by both QStash and manual triggers)
@@ -170,17 +172,16 @@ async function sendNotificationsForEvent(
   const userIds = [...new Set(subscribedUsers.map((u) => u.userId))];
   const payload = buildNotification(eventType, game);
 
-  // Get push subscriptions for these users
+  // ── Push notifications ──────────────────────────────────────────────
   const subs = await db
     .select()
     .from(pushSubscriptions)
     .where(inArray(pushSubscriptions.userId, userIds));
 
-  // Send notifications in parallel (batches of 50)
   const batchSize = 50;
   for (let i = 0; i < subs.length; i += batchSize) {
     const batch = subs.slice(i, i + batchSize);
-    const results = await Promise.allSettled(
+    await Promise.allSettled(
       batch.map(async (sub) => {
         const result = await sendPushNotification(
           {
@@ -191,7 +192,6 @@ async function sendNotificationsForEvent(
           payload
         );
 
-        // Log the notification
         await db.insert(notificationLog).values({
           userId: sub.userId,
           gameId,
@@ -201,7 +201,6 @@ async function sendNotificationsForEvent(
           errorMessage: result.success ? null : "Push delivery failed",
         });
 
-        // Delete gone subscriptions
         if (result.gone) {
           await db
             .delete(pushSubscriptions)
@@ -211,5 +210,32 @@ async function sendNotificationsForEvent(
         return result;
       })
     );
+  }
+
+  // ── Email notifications ─────────────────────────────────────────────
+  const emailUsers = await db
+    .select({ id: users.id, email: users.email })
+    .from(users)
+    .where(
+      and(
+        inArray(users.id, userIds),
+        eq(users.emailNotifications, true)
+      )
+    );
+
+  for (const user of emailUsers) {
+    const result = await sendEmailNotification(user.email, {
+      title: payload.title,
+      body: payload.body,
+    });
+
+    await db.insert(notificationLog).values({
+      userId: user.id,
+      gameId,
+      eventType: `${eventType}_email`,
+      payload,
+      delivered: result.success,
+      errorMessage: result.success ? null : "Email delivery failed",
+    });
   }
 }
