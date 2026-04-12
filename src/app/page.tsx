@@ -129,7 +129,7 @@ function FeatureCard({
   return (
     <div className="relative bg-zinc-900 border border-zinc-800 rounded-[9px] p-[18px]">
       {live && (
-        <span className="absolute top-4 right-4">
+        <span className="absolute top-1/2 right-4 -translate-y-1/2">
           <PulseDot size={6} />
         </span>
       )}
