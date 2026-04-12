@@ -93,8 +93,19 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* How it works */}
+      <section id="how" className="px-7 pb-14 max-w-2xl mx-auto">
+        <h2 className="text-xl font-medium text-center mb-8">How it works</h2>
+        <div className="space-y-6">
+          <Step number="1" title="Sign up for free" desc="Log in with Google or GitHub. No passwords, no credit card." />
+          <Step number="2" title="Pick your teams" desc="Choose the NBA teams you follow. One team or all 30 — your call." />
+          <Step number="3" title="Choose your alerts" desc="4th quarter starting, close games, tip-off — toggle what matters to you." />
+          <Step number="4" title="Get notified" desc="Push notification or email the moment it happens. Never miss the clutch moments." />
+        </div>
+      </section>
+
       {/* Features */}
-      <section id="how" className="px-7 pb-11 max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <section className="px-7 pb-11 max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3">
         <FeatureCard
           icon={<Logo size={22} />}
           title="Q4 alerts"
@@ -145,6 +156,20 @@ function FeatureCard({
       <div className="mb-3">{icon}</div>
       <div className="text-sm font-medium mb-1.5">{title}</div>
       <div className="text-[13px] text-zinc-400 leading-[1.5]">{body}</div>
+    </div>
+  );
+}
+
+function Step({ number, title, desc }: { number: string; title: string; desc: string }) {
+  return (
+    <div className="flex gap-4 items-start">
+      <div className="w-8 h-8 rounded-full bg-orange-500 text-zinc-950 flex items-center justify-center text-sm font-bold shrink-0">
+        {number}
+      </div>
+      <div>
+        <div className="font-medium text-[15px] mb-0.5">{title}</div>
+        <div className="text-sm text-zinc-400 leading-[1.5]">{desc}</div>
+      </div>
     </div>
   );
 }
