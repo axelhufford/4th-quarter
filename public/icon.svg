@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" aria-label="4th Quarter">
+  <path d="M 100 100 L 100 55 A 45 45 0 0 1 145 100 Z" fill="#18181b"/>
+  <path d="M 100 100 L 100 145 A 45 45 0 0 1 55 100 Z" fill="#18181b"/>
+  <path d="M 100 100 L 55 100 A 45 45 0 0 1 100 55 Z" fill="#18181b"/>
+  <path d="M 100 100 L 175 100 A 75 75 0 0 1 100 175 Z" fill="#f97316"/>
+  <circle cx="100" cy="100" r="60" fill="none" stroke="#f97316" stroke-width="30"/>
+  <line x1="132" y1="132" x2="180" y2="180" stroke="#f97316" stroke-width="28" stroke-linecap="round"/>
+</svg>
