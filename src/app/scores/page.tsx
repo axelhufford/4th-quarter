@@ -96,42 +96,47 @@ interface DayGames {
 }
 
 export default async function ScoresPage() {
-  // Fetch today
-  const todayData = await fetchScoreboard();
-  const todayGames = todayData.events.map(parseGame);
-  const liveCount = await getLiveGameCount();
+  let days: DayGames[] = [];
+  let liveCount = 0;
+  let error = false;
 
-  const hasLive = todayGames.some(
-    (g) => g.status === "in_progress" || g.status === "halftime"
-  );
+  try {
+    const todayData = await fetchScoreboard();
+    const todayGames = todayData.events.map(parseGame);
+    liveCount = await getLiveGameCount();
 
-  const days: DayGames[] = [];
-  const todayStr = new Date().toISOString().slice(0, 10);
+    const hasLive = todayGames.some(
+      (g) => g.status === "in_progress" || g.status === "halftime"
+    );
 
-  if (todayGames.length > 0) {
-    // Sort: live first, then scheduled, then finished
-    const sorted = [...todayGames].sort((a, b) => {
-      const order = { in_progress: 0, halftime: 0, scheduled: 1, finished: 2 };
-      return order[a.status] - order[b.status];
-    });
-    days.push({ dateKey: todayStr, label: "Today", games: sorted });
-  }
+    const todayStr = new Date().toISOString().slice(0, 10);
 
-  // If no live games, fetch upcoming days
-  if (!hasLive) {
-    for (let i = 1; i <= 3; i++) {
-      try {
-        const dateStr = formatDate(i);
-        const data = await fetchScoreboard(dateStr);
-        if (data.events.length > 0) {
-          const games = data.events.map(parseGame);
-          const label = dayLabel(dateStr.slice(0, 4) + "-" + dateStr.slice(4, 6) + "-" + dateStr.slice(6, 8));
-          days.push({ dateKey: dateStr, label, games });
+    if (todayGames.length > 0) {
+      const sorted = [...todayGames].sort((a, b) => {
+        const order = { in_progress: 0, halftime: 0, scheduled: 1, finished: 2 };
+        return order[a.status] - order[b.status];
+      });
+      days.push({ dateKey: todayStr, label: "Today", games: sorted });
+    }
+
+    // If no live games, fetch upcoming days
+    if (!hasLive) {
+      for (let i = 1; i <= 3; i++) {
+        try {
+          const dateStr = formatDate(i);
+          const data = await fetchScoreboard(dateStr);
+          if (data.events.length > 0) {
+            const games = data.events.map(parseGame);
+            const label = dayLabel(dateStr.slice(0, 4) + "-" + dateStr.slice(4, 6) + "-" + dateStr.slice(6, 8));
+            days.push({ dateKey: dateStr, label, games });
+          }
+        } catch {
+          // Skip days that fail
         }
-      } catch {
-        // Skip days that fail
       }
     }
+  } catch {
+    error = true;
   }
 
   return (
@@ -162,7 +167,11 @@ export default async function ScoresPage() {
         <h1 className="text-2xl font-bold mb-1">Scores & Schedule</h1>
         <p className="text-zinc-400 text-sm mb-8">Live scores, today&apos;s results, and upcoming games.</p>
 
-        {days.length === 0 ? (
+        {error ? (
+          <div className="text-center py-16 text-zinc-500">
+            Couldn&apos;t load scores right now. Try refreshing the page.
+          </div>
+        ) : days.length === 0 ? (
           <div className="text-center py-16 text-zinc-500">
             No games scheduled. Check back during the season.
           </div>

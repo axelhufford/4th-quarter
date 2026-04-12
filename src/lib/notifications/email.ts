@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 
+// Placeholder needed at build time (Vercel builds without env vars).
+// At runtime, we check for the real key before sending.
 const resend = new Resend(process.env.RESEND_API_KEY || "re_placeholder");
 
 interface EmailNotification {
@@ -10,7 +12,12 @@ interface EmailNotification {
 export async function sendEmailNotification(
   to: string,
   notification: EmailNotification
-): Promise<{ success: boolean }> {
+): Promise<{ success: boolean; error?: string }> {
+  if (!process.env.RESEND_API_KEY) {
+    console.error("RESEND_API_KEY is not set — skipping email send");
+    return { success: false, error: "Email not configured" };
+  }
+
   try {
     const { error } = await resend.emails.send({
       from: "4th Quarter <onboarding@resend.dev>",

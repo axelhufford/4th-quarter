@@ -25,5 +25,12 @@ export async function POST() {
     body: "Email notifications are working! You'll get alerts when your games heat up.",
   });
 
-  return NextResponse.json({ success: result.success });
+  if (!result.success) {
+    return NextResponse.json(
+      { success: false, error: result.error || "Failed to send email" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ success: true });
 }

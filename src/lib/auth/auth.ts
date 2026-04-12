@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
 import { db } from "@/lib/db/client";
-import { users, accounts, sessions } from "@/lib/db/schema";
+import { users, accounts, sessions, notificationPreferences } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -36,6 +36,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           })
           .returning();
         userId = newUser.id;
+
+        // Initialize default notification preferences
+        await db.insert(notificationPreferences).values([
+          { userId, eventType: "4th_quarter", enabled: true },
+          { userId, eventType: "game_starting", enabled: false },
+          { userId, eventType: "halftime_ending", enabled: false },
+          { userId, eventType: "close_game", enabled: false, threshold: 5 },
+        ]);
       }
 
       // Upsert account link
