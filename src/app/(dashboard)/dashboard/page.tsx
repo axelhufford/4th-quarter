@@ -1,9 +1,10 @@
 import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db/client";
-import { teams, userTeams } from "@/lib/db/schema";
+import { teams, userTeams, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { TeamPicker } from "@/components/team-picker";
 import { NotificationBell } from "@/components/notification-bell";
+import { EmailToggle } from "@/components/email-toggle";
 import { redirect } from "next/navigation";
 
 async function saveTeams(teamIds: number[]) {
@@ -34,6 +35,11 @@ export default async function DashboardPage() {
 
   const selectedIds = selectedTeams.map((t) => t.teamId);
 
+  const [user] = await db
+    .select({ emailNotifications: users.emailNotifications, email: users.email })
+    .from(users)
+    .where(eq(users.id, session.user.id));
+
   return (
     <div className="space-y-8">
       <div>
@@ -49,7 +55,13 @@ export default async function DashboardPage() {
         <h2 className="text-lg font-semibold text-white mb-4">
           Enable Notifications
         </h2>
-        <NotificationBell />
+        <div className="space-y-4">
+          <NotificationBell />
+          <EmailToggle
+            enabled={user?.emailNotifications ?? false}
+            email={user?.email ?? ""}
+          />
+        </div>
       </div>
 
       <div>
