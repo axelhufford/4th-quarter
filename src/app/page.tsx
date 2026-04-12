@@ -57,24 +57,24 @@ export default function LandingPage() {
         </div>
 
         {/* Sample alert scoreboard */}
-        <div className="mt-12 max-w-lg mx-auto bg-zinc-900 border border-zinc-800 rounded-[10px] px-5 py-3.5 flex items-center justify-between relative tabular-nums">
-          <div className="absolute top-2.5 right-3 flex items-center gap-1.5 text-[10px] text-orange-500 tracking-[0.08em]">
+        <div className="mt-12 max-w-lg mx-auto bg-zinc-900 border border-zinc-800 rounded-[10px] px-5 py-4 flex items-center justify-between relative tabular-nums">
+          <div className="absolute top-2 left-3 flex items-center gap-1.5 text-[10px] text-orange-500 tracking-[0.08em]">
             <PulseDot size={6} />
             LIVE
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mt-3">
             <div className="w-7 h-7 rounded-full bg-[#006bb6] flex items-center justify-center text-[10px] font-medium">
               NYK
             </div>
             <span className="text-[22px] font-medium tracking-tight">98</span>
           </div>
-          <div className="text-center">
+          <div className="text-center mt-3">
             <div className="text-[11px] text-orange-500 tracking-[0.08em] mb-0.5">
               4TH · 9:42
             </div>
             <div className="text-[10px] text-zinc-600">alert sent to you</div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mt-3">
             <span className="text-[22px] font-medium tracking-tight">94</span>
             <div className="w-7 h-7 rounded-full bg-[#007a33] flex items-center justify-center text-[10px] font-medium">
               BOS
@@ -94,7 +94,7 @@ export default function LandingPage() {
         <FeatureCard
           icon={<TeamsIcon />}
           title="Pick your teams"
-          body="Follow one club or the whole league."
+          body="Follow one team or the whole league."
         />
         <FeatureCard
           icon={<CloseGameIcon />}
