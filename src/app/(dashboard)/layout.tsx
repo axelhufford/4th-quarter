@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import { signOut } from "@/lib/auth/auth";
 import { getLiveGameCount } from "@/lib/espn/live-count";
+import { Logo } from "@/components/logo";
 
 export default async function DashboardLayout({
   children,
@@ -20,8 +21,9 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-zinc-950">
       <nav className="border-b border-zinc-800 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <a href="/dashboard" className="text-xl font-bold text-orange-500">
-            4th Quarter
+          <a href="/dashboard" className="flex items-center gap-2.5">
+            <Logo size={26} />
+            <span className="font-medium text-[15px] tracking-tight text-white">4th Quarter</span>
           </a>
           <div className="flex items-center gap-4">
             {liveCount > 0 && (

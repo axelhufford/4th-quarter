@@ -1,4 +1,5 @@
 import { signIn } from "@/lib/auth/auth";
+import { Logo } from "@/components/logo";
 
 export default async function LoginPage({
   searchParams,
@@ -11,7 +12,10 @@ export default async function LoginPage({
     <div className="min-h-screen flex items-center justify-center bg-zinc-950">
       <div className="w-full max-w-sm mx-auto p-8">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-orange-500 mb-2">4th Quarter</h1>
+          <div className="flex justify-center mb-4">
+            <Logo size={56} />
+          </div>
+          <h1 className="text-2xl font-medium tracking-tight text-white mb-2">4th Quarter</h1>
           <p className="text-zinc-400">
             Never miss when the game gets good
           </p>
