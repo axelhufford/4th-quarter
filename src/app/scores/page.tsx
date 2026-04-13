@@ -4,6 +4,8 @@ import { Logo, PulseDot } from "@/components/logo";
 import { TEAM_COLORS } from "@/lib/nba-teams";
 import { getLiveGameCount } from "@/lib/espn/live-count";
 import { AutoRefresh } from "@/components/auto-refresh";
+import { auth } from "@/lib/auth/auth";
+import { signOut } from "@/lib/auth/auth";
 
 interface Game {
   id: string;
@@ -97,6 +99,7 @@ interface DayGames {
 }
 
 export default async function ScoresPage() {
+  const session = await auth();
   let days: DayGames[] = [];
   let liveCount = 0;
   let hasLive = false;
@@ -146,7 +149,7 @@ export default async function ScoresPage() {
       {hasLive && <AutoRefresh intervalMs={30000} />}
       {/* Nav */}
       <nav className="flex items-center justify-between px-7 py-5 border-b border-zinc-800">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href={session?.user ? "/dashboard" : "/"} className="flex items-center gap-2.5">
           <Logo size={26} />
           <span className="font-medium text-[15px] tracking-tight">4th Quarter</span>
         </Link>
@@ -157,12 +160,51 @@ export default async function ScoresPage() {
               {liveCount} {liveCount === 1 ? "game" : "games"} live
             </div>
           )}
-          <Link
-            href="/login"
-            className="border border-zinc-800 text-white px-3.5 py-1.5 rounded-md text-[13px] hover:bg-zinc-900 transition-colors"
-          >
-            Sign in
-          </Link>
+          {session?.user ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="text-sm text-zinc-400 hover:text-white transition-colors"
+              >
+                My Teams
+              </Link>
+              <Link
+                href="/preferences"
+                className="text-sm text-zinc-400 hover:text-white transition-colors"
+              >
+                Alerts
+              </Link>
+              <div className="flex items-center gap-3 ml-2 pl-4 border-l border-zinc-800">
+                {session.user.image && (
+                  <img
+                    src={session.user.image}
+                    alt=""
+                    className="w-7 h-7 rounded-full"
+                  />
+                )}
+                <form
+                  action={async () => {
+                    "use server";
+                    await signOut({ redirectTo: "/" });
+                  }}
+                >
+                  <button
+                    type="submit"
+                    className="text-sm text-zinc-500 hover:text-white transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </form>
+              </div>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="border border-zinc-800 text-white px-3.5 py-1.5 rounded-md text-[13px] hover:bg-zinc-900 transition-colors"
+            >
+              Sign in
+            </Link>
+          )}
         </div>
       </nav>
 
