@@ -3,8 +3,14 @@
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 
-  const data = event.data.json();
-  const { title, body, tag, data: notifData } = data;
+  let data;
+  try {
+    data = event.data.json();
+  } catch {
+    data = { title: "4th Quarter", body: event.data.text() || "New alert" };
+  }
+
+  const { title = "4th Quarter", body = "", tag, data: notifData } = data;
 
   event.waitUntil(
     self.registration.showNotification(title, {

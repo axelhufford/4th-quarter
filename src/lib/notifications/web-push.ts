@@ -30,11 +30,11 @@ export async function sendPushNotification(
     return { success: true };
   } catch (err: unknown) {
     const error = err as { statusCode?: number; message?: string };
-    // 410 Gone = subscription no longer valid, should be deleted
-    if (error.statusCode === 410) {
+    // 404 or 410 = subscription no longer valid, should be deleted
+    if (error.statusCode === 410 || error.statusCode === 404) {
       return { success: false, gone: true };
     }
-    console.error("Push notification failed:", error.message);
+    console.error("Push notification failed:", error.statusCode, error.message);
     return { success: false };
   }
 }

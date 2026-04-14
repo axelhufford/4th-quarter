@@ -58,11 +58,16 @@ export function buildNotification(
     }
 
     case "game_ended": {
-      const awayWon = game.awayScore > game.homeScore;
-      const winner = awayWon ? game.awayTeamAbbr : game.homeTeamAbbr;
       const otNote = game.period > 4 ? ` (${game.period - 4}OT)` : "";
+      let title: string;
+      if (game.awayScore === game.homeScore) {
+        title = `Final: ${matchup}${otNote}`;
+      } else {
+        const winner = game.awayScore > game.homeScore ? game.awayTeamAbbr : game.homeTeamAbbr;
+        title = `Final: ${winner} Wins!${otNote}`;
+      }
       return {
-        title: `Final: ${winner} Wins!${otNote}`,
+        title,
         body: `${matchup} — Final Score: ${score}`,
         tag: `game-${game.gameId}-final`,
       };

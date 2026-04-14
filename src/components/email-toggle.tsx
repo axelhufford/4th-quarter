@@ -18,11 +18,16 @@ export function EmailToggle({ enabled: initialEnabled, email }: EmailToggleProps
     setEnabled(newValue);
     setSaving(true);
 
-    await fetch("/api/email-preference", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: newValue }),
-    });
+    try {
+      const res = await fetch("/api/email-preference", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: newValue }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+    } catch {
+      setEnabled(!newValue); // revert on failure
+    }
 
     setSaving(false);
   };

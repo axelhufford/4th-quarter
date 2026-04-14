@@ -4,6 +4,15 @@ import { db } from "@/lib/db/client";
 import { notificationPreferences } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
+const VALID_EVENT_TYPES = [
+  "game_starting",
+  "4th_quarter",
+  "halftime_ending",
+  "close_game",
+  "overtime",
+  "game_ended",
+];
+
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -30,6 +39,10 @@ export async function POST(req: NextRequest) {
     enabled: boolean;
     threshold?: number;
   };
+
+  if (!VALID_EVENT_TYPES.includes(eventType)) {
+    return NextResponse.json({ error: "Invalid event type" }, { status: 400 });
+  }
 
   // Upsert preference
   const existing = await db

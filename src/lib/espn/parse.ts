@@ -7,6 +7,9 @@ function mapStatus(
   if (completed) return "finished";
   switch (statusName) {
     case "STATUS_SCHEDULED":
+    case "STATUS_POSTPONED":
+    case "STATUS_CANCELED":
+    case "STATUS_DELAYED":
       return "scheduled";
     case "STATUS_HALFTIME":
       return "halftime";
@@ -16,14 +19,22 @@ function mapStatus(
     case "STATUS_FINAL":
       return "finished";
     default:
-      return "in_progress";
+      console.warn(`Unknown ESPN status: ${statusName}, treating as scheduled`);
+      return "scheduled";
   }
 }
 
 export function parseEvent(event: ESPNEvent): GameState {
-  const competition = event.competitions[0];
-  const home = competition.competitors.find((c) => c.homeAway === "home")!;
-  const away = competition.competitors.find((c) => c.homeAway === "away")!;
+  const competition = event.competitions?.[0];
+  if (!competition) {
+    throw new Error(`ESPN event ${event.id} has no competitions`);
+  }
+
+  const home = competition.competitors.find((c) => c.homeAway === "home");
+  const away = competition.competitors.find((c) => c.homeAway === "away");
+  if (!home || !away) {
+    throw new Error(`ESPN event ${event.id} missing home or away competitor`);
+  }
 
   return {
     gameId: event.id,
@@ -31,7 +42,7 @@ export function parseEvent(event: ESPNEvent): GameState {
       event.status.type.name,
       event.status.type.completed
     ),
-    period: event.status.period,
+    period: event.status.period ?? 0,
     homeTeamEspnId: home.team.id,
     homeTeamName: home.team.displayName,
     homeTeamAbbr: home.team.abbreviation,
