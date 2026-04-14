@@ -8,6 +8,7 @@ interface Team {
   abbreviation: string;
   espnId: string;
   conference: string;
+  logoUrl?: string | null;
 }
 
 interface TeamPickerProps {
@@ -54,20 +55,7 @@ export function TeamPicker({ teams, selectedIds, onSave, liveEspnIds = [] }: Tea
         </h3>
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
           {eastTeams.map((team) => (
-            <button
-              key={team.id}
-              onClick={() => toggle(team.id)}
-              className={`relative px-3 py-3 rounded-lg text-sm font-medium transition-all ${
-                selected.has(team.id)
-                  ? "bg-orange-500 text-white ring-2 ring-orange-400"
-                  : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
-              }`}
-            >
-              {team.abbreviation}
-              {liveSet.has(team.espnId) && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
-              )}
-            </button>
+            <TeamButton key={team.id} team={team} selected={selected.has(team.id)} live={liveSet.has(team.espnId)} onToggle={() => toggle(team.id)} />
           ))}
         </div>
       </div>
@@ -78,20 +66,7 @@ export function TeamPicker({ teams, selectedIds, onSave, liveEspnIds = [] }: Tea
         </h3>
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
           {westTeams.map((team) => (
-            <button
-              key={team.id}
-              onClick={() => toggle(team.id)}
-              className={`relative px-3 py-3 rounded-lg text-sm font-medium transition-all ${
-                selected.has(team.id)
-                  ? "bg-orange-500 text-white ring-2 ring-orange-400"
-                  : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
-              }`}
-            >
-              {team.abbreviation}
-              {liveSet.has(team.espnId) && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
-              )}
-            </button>
+            <TeamButton key={team.id} team={team} selected={selected.has(team.id)} live={liveSet.has(team.espnId)} onToggle={() => toggle(team.id)} />
           ))}
         </div>
       </div>
@@ -112,5 +87,34 @@ export function TeamPicker({ teams, selectedIds, onSave, liveEspnIds = [] }: Tea
           : `Save (${selected.size} team${selected.size !== 1 ? "s" : ""} selected)`}
       </button>
     </div>
+  );
+}
+
+function TeamButton({ team, selected, live, onToggle }: { team: Team; selected: boolean; live: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={`relative flex flex-col items-center gap-1.5 px-3 py-3 rounded-lg text-sm font-medium transition-all ${
+        selected
+          ? "bg-orange-500 text-white ring-2 ring-orange-400"
+          : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+      }`}
+    >
+      {team.logoUrl ? (
+        <img
+          src={team.logoUrl}
+          alt={team.name}
+          className="w-8 h-8 object-contain"
+        />
+      ) : (
+        <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] font-bold">
+          {team.abbreviation}
+        </div>
+      )}
+      <span className="text-[11px]">{team.abbreviation}</span>
+      {live && (
+        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+      )}
+    </button>
   );
 }

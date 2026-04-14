@@ -11,8 +11,10 @@ interface Game {
   id: string;
   awayAbbr: string;
   awayScore: number;
+  awayLogo: string;
   homeAbbr: string;
   homeScore: number;
+  homeLogo: string;
   status: "scheduled" | "in_progress" | "halftime" | "finished";
   period: number;
   clock: string;
@@ -46,8 +48,10 @@ function parseGame(event: import("@/lib/espn/types").ESPNEvent): Game {
     id: event.id,
     awayAbbr: away.team.abbreviation,
     awayScore: parseInt(away.score, 10) || 0,
+    awayLogo: away.team.logo,
     homeAbbr: home.team.abbreviation,
     homeScore: parseInt(home.score, 10) || 0,
+    homeLogo: home.team.logo,
     status,
     period: event.status.period,
     clock: event.status.displayClock,
@@ -174,6 +178,12 @@ export default async function ScoresPage() {
               >
                 Alerts
               </Link>
+              <Link
+                href="/history"
+                className="text-sm text-zinc-400 hover:text-white transition-colors"
+              >
+                History
+              </Link>
               <div className="flex items-center gap-3 ml-2 pl-4 border-l border-zinc-800">
                 {session.user.image && (
                   <img
@@ -262,12 +272,16 @@ function GameCard({ game }: { game: Game }) {
 
       {/* Away team */}
       <div className={`flex items-center gap-3 ${isLive || isFinished ? "mt-3" : ""}`}>
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold"
-          style={{ backgroundColor: TEAM_COLORS[game.awayAbbr] || "#3f3f46" }}
-        >
-          {game.awayAbbr}
-        </div>
+        {game.awayLogo ? (
+          <img src={game.awayLogo} alt={game.awayAbbr} className="w-8 h-8 object-contain" />
+        ) : (
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold"
+            style={{ backgroundColor: TEAM_COLORS[game.awayAbbr] || "#3f3f46" }}
+          >
+            {game.awayAbbr}
+          </div>
+        )}
         {!isLive && game.status === "scheduled" ? null : (
           <span className={`text-xl font-medium tracking-tight ${isFinished && game.awayScore < game.homeScore ? "text-zinc-500" : ""}`}>
             {game.awayScore}
@@ -303,12 +317,16 @@ function GameCard({ game }: { game: Game }) {
             {game.homeScore}
           </span>
         )}
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold"
-          style={{ backgroundColor: TEAM_COLORS[game.homeAbbr] || "#3f3f46" }}
-        >
-          {game.homeAbbr}
-        </div>
+        {game.homeLogo ? (
+          <img src={game.homeLogo} alt={game.homeAbbr} className="w-8 h-8 object-contain" />
+        ) : (
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold"
+            style={{ backgroundColor: TEAM_COLORS[game.homeAbbr] || "#3f3f46" }}
+          >
+            {game.homeAbbr}
+          </div>
+        )}
       </div>
     </div>
   );

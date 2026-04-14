@@ -4,7 +4,9 @@ export type EventType =
   | "game_starting"
   | "4th_quarter"
   | "halftime_ending"
-  | "close_game";
+  | "close_game"
+  | "overtime"
+  | "game_ended";
 
 interface PreviousState {
   status: string;
@@ -58,6 +60,25 @@ export function detectTriggers(
     }
   }
 
+  // Overtime: period increased beyond 4 (entering OT1, OT2, etc.)
+  if (
+    current.period > prev.period &&
+    current.period > 4 &&
+    current.status === "in_progress"
+  ) {
+    const otKey = `overtime_p${current.period}`;
+    if (!sent.has(otKey)) {
+      triggered.push("overtime");
+    }
+  }
+
+  // Game ended: was not finished, now finished
+  if (prev.status !== "finished" && current.status === "finished") {
+    if (!sent.has("game_ended")) {
+      triggered.push("game_ended");
+    }
+  }
+
   return triggered;
 }
 
@@ -66,5 +87,6 @@ export function detectTriggers(
  */
 export function dedupKey(event: EventType, period: number): string {
   if (event === "close_game") return `close_game_p${period}`;
+  if (event === "overtime") return `overtime_p${period}`;
   return event;
 }

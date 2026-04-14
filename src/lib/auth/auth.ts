@@ -43,6 +43,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           { userId, eventType: "game_starting", enabled: false },
           { userId, eventType: "halftime_ending", enabled: false },
           { userId, eventType: "close_game", enabled: false, threshold: 5 },
+          { userId, eventType: "overtime", enabled: true },
+          { userId, eventType: "game_ended", enabled: true },
         ]);
       }
 

@@ -37,7 +37,7 @@ export function buildNotification(
         tag: `game-${game.gameId}-4q`,
       };
 
-    case "close_game":
+    case "close_game": {
       const diff = Math.abs(game.homeScore - game.awayScore);
       const periodLabel = game.period > 4 ? `OT${game.period - 4}` : "4th";
       return {
@@ -45,5 +45,27 @@ export function buildNotification(
         body: `${matchup} — Score: ${score} (${diff}pt game)`,
         tag: `game-${game.gameId}-close-p${game.period}`,
       };
+    }
+
+    case "overtime": {
+      const otNumber = game.period - 4;
+      const otLabel = otNumber === 1 ? "Overtime" : `${otNumber}OT`;
+      return {
+        title: `${otLabel}!`,
+        body: `${matchup} — Score: ${score}. Heading to ${otLabel.toLowerCase()}!`,
+        tag: `game-${game.gameId}-ot-p${game.period}`,
+      };
+    }
+
+    case "game_ended": {
+      const awayWon = game.awayScore > game.homeScore;
+      const winner = awayWon ? game.awayTeamAbbr : game.homeTeamAbbr;
+      const otNote = game.period > 4 ? ` (${game.period - 4}OT)` : "";
+      return {
+        title: `Final: ${winner} Wins!${otNote}`,
+        body: `${matchup} — Final Score: ${score}`,
+        tag: `game-${game.gameId}-final`,
+      };
+    }
   }
 }

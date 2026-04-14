@@ -50,6 +50,12 @@ export default async function DashboardLayout({
             >
               Alerts
             </a>
+            <a
+              href="/history"
+              className="text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              History
+            </a>
             <div className="flex items-center gap-3 ml-4 pl-4 border-l border-zinc-800">
               {session.user.image && (
                 <img

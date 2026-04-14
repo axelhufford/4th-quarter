@@ -10,11 +10,6 @@ interface Preference {
 
 const EVENT_TYPES = [
   {
-    type: "4th_quarter",
-    label: "4th Quarter Starting",
-    description: "Get notified when the 4th quarter is about to begin",
-  },
-  {
     type: "game_starting",
     label: "Game Starting",
     description: "Get notified when your team's game tips off",
@@ -25,10 +20,25 @@ const EVENT_TYPES = [
     description: "Get notified when halftime ends and the 2nd half begins",
   },
   {
+    type: "4th_quarter",
+    label: "4th Quarter Starting",
+    description: "Get notified when the 4th quarter is about to begin",
+  },
+  {
     type: "close_game",
     label: "Close Game Alert",
     description: "Get notified when the game is close in the 4th quarter",
     hasThreshold: true,
+  },
+  {
+    type: "overtime",
+    label: "Overtime Alert",
+    description: "Get notified when a game goes to overtime",
+  },
+  {
+    type: "game_ended",
+    label: "Final Score",
+    description: "Get the final score when your team's game ends",
   },
 ];
 
@@ -44,7 +54,7 @@ export function PreferenceForm({ preferences }: PreferenceFormProps) {
       for (const et of EVENT_TYPES) {
         const existing = preferences.find((p) => p.eventType === et.type);
         map[et.type] = {
-          enabled: existing ? existing.enabled : et.type === "4th_quarter",
+          enabled: existing ? existing.enabled : ["4th_quarter", "game_ended", "overtime"].includes(et.type),
           threshold: existing?.threshold ?? 5,
         };
       }
