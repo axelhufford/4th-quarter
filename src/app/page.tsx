@@ -73,9 +73,12 @@ export default async function LandingPage() {
             LIVE
           </div>
           <div className="flex items-center gap-3 mt-3">
-            <div className="w-7 h-7 rounded-full bg-[#006bb6] flex items-center justify-center text-[10px] font-medium">
-              NYK
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://a.espncdn.com/i/teamlogos/nba/500/nyk.png"
+              alt="New York Knicks"
+              className="w-8 h-8 object-contain"
+            />
             <span className="text-[22px] font-medium tracking-tight">98</span>
           </div>
           <div className="text-center mt-3">
@@ -86,9 +89,12 @@ export default async function LandingPage() {
           </div>
           <div className="flex items-center gap-3 mt-3">
             <span className="text-[22px] font-medium tracking-tight">94</span>
-            <div className="w-7 h-7 rounded-full bg-[#007a33] flex items-center justify-center text-[10px] font-medium">
-              BOS
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://a.espncdn.com/i/teamlogos/nba/500/bos.png"
+              alt="Boston Celtics"
+              className="w-8 h-8 object-contain"
+            />
           </div>
         </div>
       </section>
