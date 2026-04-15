@@ -11,11 +11,12 @@ import {
   pushSubscriptions,
   notificationLog,
 } from "@/lib/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { detectTriggers, dedupKey, EventType } from "@/lib/notifications/triggers";
 import { buildNotification } from "@/lib/notifications/templates";
 import { sendPushNotification } from "@/lib/notifications/web-push";
 import { sendEmailNotification } from "@/lib/notifications/email";
+import type { GameState } from "@/lib/espn/types";
 
 export async function POST(req: NextRequest) {
   // Verify cron secret
@@ -31,27 +32,71 @@ export async function POST(req: NextRequest) {
     const results: string[] = [];
     let totalNotifications = 0;
 
+    // ── Batch phase: parse all events, then fetch teams/states/thresholds in 3 queries ──
+    const allEspnIds = new Set<string>();
+    const allGameIds: string[] = [];
+    const parsedGames: GameState[] = [];
     for (const event of scoreboard.events) {
-      const game = parseEvent(event);
+      try {
+        const game = parseEvent(event);
+        parsedGames.push(game);
+        allEspnIds.add(game.homeTeamEspnId);
+        allEspnIds.add(game.awayTeamEspnId);
+        allGameIds.push(game.gameId);
+      } catch (err) {
+        console.error("Failed to parse ESPN event", event.id, err);
+      }
+    }
 
-      // Look up team IDs from our database
-      const [homeTeam] = await db
-        .select()
-        .from(teams)
-        .where(eq(teams.espnId, game.homeTeamEspnId))
-        .limit(1);
-      const [awayTeam] = await db
-        .select()
-        .from(teams)
-        .where(eq(teams.espnId, game.awayTeamEspnId))
-        .limit(1);
+    const allTeams = allEspnIds.size
+      ? await db
+          .select()
+          .from(teams)
+          .where(inArray(teams.espnId, Array.from(allEspnIds)))
+      : [];
+    const teamByEspnId = new Map(allTeams.map((t) => [t.espnId, t]));
 
-      // Get previous state from DB
-      const [prevState] = await db
-        .select()
-        .from(gameStates)
-        .where(eq(gameStates.gameId, game.gameId))
-        .limit(1);
+    const existingStates = allGameIds.length
+      ? await db
+          .select()
+          .from(gameStates)
+          .where(inArray(gameStates.gameId, allGameIds))
+      : [];
+    const stateByGameId = new Map(existingStates.map((s) => [s.gameId, s]));
+
+    // Per-team max close_game threshold across users subscribed with the event enabled.
+    // Used to decide WHEN to trigger; per-user filtering happens in sendNotificationsForEvent.
+    const allDbTeamIds = allTeams.map((t) => t.id);
+    const thresholdRows = allDbTeamIds.length
+      ? await db
+          .select({
+            teamId: userTeams.teamId,
+            threshold: notificationPreferences.threshold,
+          })
+          .from(userTeams)
+          .innerJoin(
+            notificationPreferences,
+            and(
+              eq(notificationPreferences.userId, userTeams.userId),
+              eq(notificationPreferences.eventType, "close_game"),
+              eq(notificationPreferences.enabled, true)
+            )
+          )
+          .where(inArray(userTeams.teamId, allDbTeamIds))
+      : [];
+
+    const maxThresholdByTeamId = new Map<number, number>();
+    for (const row of thresholdRows) {
+      const t = row.threshold ?? 5;
+      const cur = maxThresholdByTeamId.get(row.teamId) ?? 0;
+      if (t > cur) maxThresholdByTeamId.set(row.teamId, t);
+    }
+
+    // ── Per-game loop: now uses map lookups instead of queries ──────────
+    for (const game of parsedGames) {
+      const homeTeam = teamByEspnId.get(game.homeTeamEspnId);
+      const awayTeam = teamByEspnId.get(game.awayTeamEspnId);
+      const prevState = stateByGameId.get(game.gameId);
 
       if (!prevState) {
         // First time seeing this game — insert it
@@ -73,16 +118,23 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      // ── Detect triggers BEFORE updating state ──────────────────────
+      // Compute the per-game close_game threshold (max across users on either team).
+      // Default of 5 ensures we still trigger for the global default if no users have prefs set.
+      const homeMax = homeTeam ? maxThresholdByTeamId.get(homeTeam.id) ?? 5 : 5;
+      const awayMax = awayTeam ? maxThresholdByTeamId.get(awayTeam.id) ?? 5 : 5;
+      const closeGameThreshold = Math.max(homeMax, awayMax, 5);
+
+      const oldSent = (prevState.notificationsSent as string[]) || [];
       const triggered = detectTriggers(
         {
           status: prevState.status,
           period: prevState.period,
           homeScore: prevState.homeScore,
           awayScore: prevState.awayScore,
-          notificationsSent: (prevState.notificationsSent as string[]) || [],
+          notificationsSent: oldSent,
         },
-        game
+        game,
+        closeGameThreshold
       );
 
       if (triggered.length > 0) {
@@ -90,20 +142,15 @@ export async function POST(req: NextRequest) {
           (id): id is number => id !== null
         );
 
-        if (teamIds.length > 0) {
-          for (const eventType of triggered) {
-            await sendNotificationsForEvent(eventType, teamIds, game, prevState.gameId);
-            totalNotifications++;
-          }
-        }
-
-        // Update state with new notifications sent
+        // ── Compare-and-swap: claim dedup keys atomically BEFORE sending ──
+        // If another concurrent invocation already advanced notificationsSent,
+        // this update finds zero rows and we skip — preventing duplicates.
         const newSent = [
-          ...((prevState.notificationsSent as string[]) || []),
+          ...oldSent,
           ...triggered.map((t) => dedupKey(t, game.period)),
         ];
 
-        await db
+        const claimed = await db
           .update(gameStates)
           .set({
             status: game.status,
@@ -114,13 +161,38 @@ export async function POST(req: NextRequest) {
             lastPolledAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(gameStates.gameId, game.gameId));
+          .where(
+            and(
+              eq(gameStates.gameId, game.gameId),
+              sql`${gameStates.notificationsSent}::text = ${JSON.stringify(oldSent)}::jsonb::text`
+            )
+          )
+          .returning({ gameId: gameStates.gameId });
+
+        if (claimed.length === 0) {
+          results.push(
+            `Skipped (concurrent run): ${game.awayTeamAbbr} @ ${game.homeTeamAbbr}`
+          );
+          continue;
+        }
+
+        if (teamIds.length > 0) {
+          for (const eventType of triggered) {
+            await sendNotificationsForEvent(
+              eventType,
+              teamIds,
+              game,
+              prevState.gameId
+            );
+            totalNotifications++;
+          }
+        }
 
         results.push(
           `Triggered [${triggered.join(", ")}]: ${game.awayTeamAbbr} @ ${game.homeTeamAbbr}`
         );
       } else {
-        // No triggers — just update scores/status
+        // No triggers — just update scores/status (no CAS needed)
         await db
           .update(gameStates)
           .set({
@@ -156,12 +228,16 @@ export async function POST(req: NextRequest) {
 async function sendNotificationsForEvent(
   eventType: EventType,
   teamIds: number[],
-  game: import("@/lib/espn/types").GameState,
+  game: GameState,
   gameId: string
 ) {
-  // Find users subscribed to these teams who have this event type enabled
+  // Find users subscribed to these teams who have this event type enabled.
+  // Pull threshold so we can per-user filter close_game by point differential.
   const subscribedUsers = await db
-    .select({ userId: userTeams.userId })
+    .select({
+      userId: userTeams.userId,
+      threshold: notificationPreferences.threshold,
+    })
     .from(userTeams)
     .innerJoin(
       notificationPreferences,
@@ -175,7 +251,15 @@ async function sendNotificationsForEvent(
 
   if (subscribedUsers.length === 0) return;
 
-  const userIds = [...new Set(subscribedUsers.map((u) => u.userId))];
+  // Per-user filtering: for close_game, only notify users whose threshold ≥ diff
+  let filteredUsers = subscribedUsers;
+  if (eventType === "close_game") {
+    const diff = Math.abs(game.homeScore - game.awayScore);
+    filteredUsers = subscribedUsers.filter((u) => diff <= (u.threshold ?? 5));
+    if (filteredUsers.length === 0) return;
+  }
+
+  const userIds = [...new Set(filteredUsers.map((u) => u.userId))];
   const payload = buildNotification(eventType, game);
 
   // Push notifications

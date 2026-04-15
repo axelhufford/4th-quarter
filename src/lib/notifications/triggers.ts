@@ -19,10 +19,15 @@ interface PreviousState {
 /**
  * Compare previous and current game state to determine which notification
  * events should fire. Returns only events that haven't already been sent.
+ *
+ * `closeGameThreshold` is the maximum point differential that counts as a
+ * "close game". Callers should pass the highest threshold across all users
+ * subscribed to either team — per-user filtering happens downstream.
  */
 export function detectTriggers(
   prev: PreviousState,
-  current: GameState
+  current: GameState,
+  closeGameThreshold: number = 5
 ): EventType[] {
   const triggered: EventType[] = [];
   const sent = new Set(prev.notificationsSent);
@@ -48,11 +53,11 @@ export function detectTriggers(
     }
   }
 
-  // Close game: in 4th quarter (or OT) and score difference is small
-  // This one can fire multiple times so we use a different dedup key
+  // Close game: in 4th quarter (or OT) and score difference is within threshold
+  // This one can fire multiple times (once per period) via different dedup keys
   if (current.period >= 4 && current.status === "in_progress") {
     const diff = Math.abs(current.homeScore - current.awayScore);
-    if (diff <= 5) {
+    if (diff <= closeGameThreshold) {
       const closeKey = `close_game_p${current.period}`;
       if (!sent.has(closeKey)) {
         triggered.push("close_game");
