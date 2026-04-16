@@ -19,6 +19,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         .where(eq(users.email, user.email))
         .limit(1);
 
+      // Default preferences — used for both new users and backfilling missing rows
+      const DEFAULT_PREFS: { eventType: string; enabled: boolean; threshold?: number }[] = [
+        { eventType: "4th_quarter", enabled: true },
+        { eventType: "game_starting", enabled: false },
+        { eventType: "halftime_ending", enabled: false },
+        { eventType: "close_game", enabled: false, threshold: 5 },
+        { eventType: "overtime", enabled: true },
+        { eventType: "game_ended", enabled: true },
+      ];
+
       let userId: string;
       if (existing.length > 0) {
         userId = existing[0].id;
@@ -36,17 +46,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           })
           .returning();
         userId = newUser.id;
-
-        // Initialize default notification preferences
-        await db.insert(notificationPreferences).values([
-          { userId, eventType: "4th_quarter", enabled: true },
-          { userId, eventType: "game_starting", enabled: false },
-          { userId, eventType: "halftime_ending", enabled: false },
-          { userId, eventType: "close_game", enabled: false, threshold: 5 },
-          { userId, eventType: "overtime", enabled: true },
-          { userId, eventType: "game_ended", enabled: true },
-        ]);
       }
+
+      // Ensure all notification preferences exist (self-healing for existing users,
+      // initializes for new users). onConflictDoNothing preserves existing prefs.
+      await db
+        .insert(notificationPreferences)
+        .values(DEFAULT_PREFS.map((p) => ({ userId, ...p })))
+        .onConflictDoNothing();
 
       // Upsert account link
       const existingAccount = await db
