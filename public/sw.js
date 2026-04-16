@@ -26,5 +26,16 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(clients.openWindow("/dashboard"));
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((windowClients) => {
+        for (const client of windowClients) {
+          if (client.url.includes("/dashboard") && "focus" in client) {
+            return client.focus();
+          }
+        }
+        return clients.openWindow("/dashboard");
+      })
+  );
 });

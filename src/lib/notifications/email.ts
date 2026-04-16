@@ -9,6 +9,14 @@ interface EmailNotification {
   body: string;
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export async function sendEmailNotification(
   to: string,
   notification: EmailNotification
@@ -29,10 +37,10 @@ export async function sendEmailNotification(
             <span style="font-size: 48px;">🏀</span>
           </div>
           <h1 style="color: #f97316; font-size: 24px; text-align: center; margin: 0 0 8px;">
-            ${notification.title}
+            ${escapeHtml(notification.title)}
           </h1>
           <p style="color: #d4d4d8; font-size: 18px; text-align: center; margin: 0 0 32px;">
-            ${notification.body}
+            ${escapeHtml(notification.body)}
           </p>
           <hr style="border: none; border-top: 1px solid #333; margin: 24px 0;" />
           <p style="color: #71717a; font-size: 12px; text-align: center; margin: 0;">

@@ -37,43 +37,19 @@ export async function POST(req: NextRequest) {
 
     let totalNotifications = 0;
 
-    // ── Parse events; handle scheduled/finished separately from active ones ──
-    const activeGames: GameState[] = [];
-    const finishedGameIds: string[] = [];
-    const finishedGamesById = new Map<string, GameState>();
+    // ── Parse all events, skipping only scheduled games ──
+    const parsedGames: GameState[] = [];
     for (const event of events) {
       try {
         const game = parseEvent(event);
-        if (game.status === "finished") {
-          finishedGameIds.push(game.gameId);
-          finishedGamesById.set(game.gameId, game);
-        } else if (game.status === "scheduled") {
-          // skip — nothing to do here
-        } else {
-          activeGames.push(game);
-        }
+        if (game.status === "scheduled") continue;
+        parsedGames.push(game);
       } catch (err) {
         console.error("Failed to parse ESPN event", event.id, err);
       }
     }
 
-    // Mark finished games as finished — bulk update by gameId list
-    for (const fGameId of finishedGameIds) {
-      const fGame = finishedGamesById.get(fGameId);
-      if (!fGame) continue;
-      await db
-        .update(gameStates)
-        .set({
-          status: "finished",
-          period: fGame.period,
-          homeScore: fGame.homeScore,
-          awayScore: fGame.awayScore,
-          updatedAt: new Date(),
-        })
-        .where(eq(gameStates.gameId, fGame.gameId));
-    }
-
-    if (activeGames.length === 0) {
+    if (parsedGames.length === 0) {
       return NextResponse.json({
         ok: true,
         gamesPolled: events.length,
@@ -81,12 +57,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Batch-fetch existing game states for all active games ────────────
-    const activeGameIds = activeGames.map((g) => g.gameId);
+    // ── Batch-fetch existing game states ────────────────────────────────
+    const allGameIds = parsedGames.map((g) => g.gameId);
     const existingStates = await db
       .select()
       .from(gameStates)
-      .where(inArray(gameStates.gameId, activeGameIds));
+      .where(inArray(gameStates.gameId, allGameIds));
     const stateByGameId = new Map(existingStates.map((s) => [s.gameId, s]));
 
     // Per-team max close_game threshold across users with the event enabled.
@@ -122,7 +98,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Per-game loop using map lookups ──────────────────────────────────
-    for (const currentGame of activeGames) {
+    for (const currentGame of parsedGames) {
       const prevState = stateByGameId.get(currentGame.gameId);
       if (!prevState) continue;
 
@@ -175,7 +151,7 @@ export async function POST(req: NextRequest) {
           .where(
             and(
               eq(gameStates.gameId, currentGame.gameId),
-              sql`${gameStates.notificationsSent}::text = ${JSON.stringify(oldSent)}::jsonb::text`
+              sql`${gameStates.notificationsSent} = ${JSON.stringify(oldSent)}::jsonb`
             )
           )
           .returning({ gameId: gameStates.gameId });

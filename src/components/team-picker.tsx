@@ -14,7 +14,7 @@ interface Team {
 interface TeamPickerProps {
   teams: Team[];
   selectedIds: number[];
-  onSave: (teamIds: number[]) => void;
+  onSave: (teamIds: number[]) => Promise<void>;
   liveEspnIds?: string[];
 }
 
@@ -25,9 +25,11 @@ export function TeamPicker({ teams, selectedIds, onSave, liveEspnIds = [] }: Tea
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState(false);
 
   const toggle = (id: number) => {
     setSaved(false);
+    setError(false);
     const next = new Set(selected);
     if (next.has(id)) {
       next.delete(id);
@@ -39,9 +41,15 @@ export function TeamPicker({ teams, selectedIds, onSave, liveEspnIds = [] }: Tea
 
   const handleSave = async () => {
     setSaving(true);
-    await onSave(Array.from(selected));
-    setSaving(false);
-    setSaved(true);
+    setError(false);
+    try {
+      await onSave(Array.from(selected));
+      setSaved(true);
+    } catch {
+      setError(true);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const eastTeams = teams.filter((t) => t.conference === "East");
@@ -73,15 +81,19 @@ export function TeamPicker({ teams, selectedIds, onSave, liveEspnIds = [] }: Tea
 
       <button
         onClick={handleSave}
-        disabled={saving || selected.size === 0}
+        disabled={saving}
         className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-          saved
+          error
+            ? "bg-red-600 text-white"
+            : saved
             ? "bg-green-600 text-white"
             : "bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
         }`}
       >
         {saving
           ? "Saving..."
+          : error
+          ? "Failed — try again"
           : saved
           ? "Saved!"
           : `Save (${selected.size} team${selected.size !== 1 ? "s" : ""} selected)`}

@@ -21,7 +21,7 @@ export async function fetchScoreboard(date?: string): Promise<ESPNScoreboardResp
       throw new Error(`ESPN API error: ${res.status} ${res.statusText}`);
     }
 
-    return res.json();
+    return await res.json();
   } finally {
     clearTimeout(timeout);
   }

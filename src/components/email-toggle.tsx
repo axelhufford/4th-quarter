@@ -65,6 +65,9 @@ export function EmailToggle({ enabled: initialEnabled, email }: EmailToggleProps
         <button
           onClick={toggle}
           disabled={saving}
+          role="switch"
+          aria-checked={enabled}
+          aria-label="Toggle Email Notifications"
           className={`relative w-12 h-7 rounded-full transition-colors ${
             enabled ? "bg-orange-500" : "bg-zinc-700"
           }`}

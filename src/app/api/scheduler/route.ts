@@ -100,20 +100,23 @@ export async function POST(req: NextRequest) {
 
       if (!prevState) {
         // First time seeing this game — insert it
-        await db.insert(gameStates).values({
-          gameId: game.gameId,
-          homeTeamId: homeTeam?.id ?? null,
-          awayTeamId: awayTeam?.id ?? null,
-          status: game.status,
-          period: game.period,
-          homeScore: game.homeScore,
-          awayScore: game.awayScore,
-          gameDate: new Date(game.startTime).toISOString().split("T")[0],
-          startTime: new Date(game.startTime),
-          lastPolledAt: new Date(),
-          notificationsSent: [],
-          updatedAt: new Date(),
-        });
+        await db
+          .insert(gameStates)
+          .values({
+            gameId: game.gameId,
+            homeTeamId: homeTeam?.id ?? null,
+            awayTeamId: awayTeam?.id ?? null,
+            status: game.status,
+            period: game.period,
+            homeScore: game.homeScore,
+            awayScore: game.awayScore,
+            gameDate: new Date(game.startTime).toISOString().split("T")[0],
+            startTime: new Date(game.startTime),
+            lastPolledAt: new Date(),
+            notificationsSent: [],
+            updatedAt: new Date(),
+          })
+          .onConflictDoNothing();
         results.push(`Created: ${game.awayTeamAbbr} @ ${game.homeTeamAbbr}`);
         continue;
       }
@@ -164,7 +167,7 @@ export async function POST(req: NextRequest) {
           .where(
             and(
               eq(gameStates.gameId, game.gameId),
-              sql`${gameStates.notificationsSent}::text = ${JSON.stringify(oldSent)}::jsonb::text`
+              sql`${gameStates.notificationsSent} = ${JSON.stringify(oldSent)}::jsonb`
             )
           )
           .returning({ gameId: gameStates.gameId });

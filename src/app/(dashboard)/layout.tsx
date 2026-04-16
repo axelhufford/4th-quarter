@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/lib/auth/auth";
 import { getLiveGameCount } from "@/lib/espn/live-count";
 import { Logo } from "@/components/logo";
+import Link from "next/link";
 
 export default async function DashboardLayout({
   children,
@@ -21,10 +22,10 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-zinc-950">
       <nav className="border-b border-zinc-800 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <a href="/dashboard" className="flex items-center gap-2.5">
+          <Link href="/dashboard" className="flex items-center gap-2.5">
             <Logo size={26} />
             <span className="font-medium text-[15px] tracking-tight text-white">4th Quarter</span>
-          </a>
+          </Link>
           <div className="flex items-center gap-4">
             {liveCount > 0 && (
               <span className="flex items-center gap-1.5 text-xs text-zinc-400">
@@ -32,30 +33,30 @@ export default async function DashboardLayout({
                 {liveCount} {liveCount === 1 ? "game" : "games"} live
               </span>
             )}
-            <a
+            <Link
               href="/scores"
               className="text-sm text-zinc-400 hover:text-white transition-colors"
             >
               Scores
-            </a>
-            <a
+            </Link>
+            <Link
               href="/dashboard"
               className="text-sm text-zinc-400 hover:text-white transition-colors"
             >
               My Teams
-            </a>
-            <a
+            </Link>
+            <Link
               href="/preferences"
               className="text-sm text-zinc-400 hover:text-white transition-colors"
             >
               Alerts
-            </a>
-            <a
+            </Link>
+            <Link
               href="/history"
               className="text-sm text-zinc-400 hover:text-white transition-colors"
             >
               History
-            </a>
+            </Link>
             <div className="flex items-center gap-3 ml-4 pl-4 border-l border-zinc-800">
               {session.user.image && (
                 <img

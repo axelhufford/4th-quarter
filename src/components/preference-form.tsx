@@ -67,22 +67,33 @@ export function PreferenceForm({ preferences }: PreferenceFormProps) {
     const current = prefs[eventType];
     const newEnabled = !current.enabled;
 
+    // Optimistic update
     setPrefs((prev) => ({
       ...prev,
       [eventType]: { ...prev[eventType], enabled: newEnabled },
     }));
 
     setSaving(eventType);
-    await fetch("/api/preferences", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        eventType,
-        enabled: newEnabled,
-        threshold: current.threshold,
-      }),
-    });
-    setSaving(null);
+    try {
+      const res = await fetch("/api/preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventType,
+          enabled: newEnabled,
+          threshold: current.threshold,
+        }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+    } catch {
+      // Revert on failure
+      setPrefs((prev) => ({
+        ...prev,
+        [eventType]: { ...prev[eventType], enabled: !newEnabled },
+      }));
+    } finally {
+      setSaving(null);
+    }
   };
 
   return (
@@ -105,6 +116,9 @@ export function PreferenceForm({ preferences }: PreferenceFormProps) {
             <button
               onClick={() => togglePref(et.type)}
               disabled={saving === et.type}
+              role="switch"
+              aria-checked={pref.enabled}
+              aria-label={`Toggle ${et.label} notifications`}
               className={`relative w-12 h-7 rounded-full transition-colors ${
                 pref.enabled ? "bg-orange-500" : "bg-zinc-700"
               }`}

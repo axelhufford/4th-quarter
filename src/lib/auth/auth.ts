@@ -82,7 +82,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return true;
     },
     async jwt({ token }) {
-      if (token.email) {
+      // Only query DB when userId isn't cached in the token yet
+      if (!token.userId && token.email) {
         const [user] = await db
           .select()
           .from(users)

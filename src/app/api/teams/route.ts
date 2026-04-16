@@ -15,20 +15,37 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { teamIds } = (await req.json()) as { teamIds: number[] };
-
-  if (!Array.isArray(teamIds) || teamIds.length === 0) {
-    return NextResponse.json({ error: "No teams selected" }, { status: 400 });
+  let body: { teamIds?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Replace all team selections for this user
-  await db.delete(userTeams).where(eq(userTeams.userId, session.user.id));
-  await db.insert(userTeams).values(
-    teamIds.map((teamId) => ({
-      userId: session.user!.id!,
-      teamId,
-    }))
-  );
+  const { teamIds } = body as { teamIds: number[] };
+
+  if (!Array.isArray(teamIds)) {
+    return NextResponse.json({ error: "teamIds must be an array" }, { status: 400 });
+  }
+
+  // Validate every ID is a positive integer
+  if (!teamIds.every((id) => Number.isInteger(id) && id > 0)) {
+    return NextResponse.json({ error: "Invalid team IDs" }, { status: 400 });
+  }
+
+  // Atomic: delete + insert in a transaction so a failed insert
+  // doesn't leave the user with zero team selections
+  await db.transaction(async (tx) => {
+    await tx.delete(userTeams).where(eq(userTeams.userId, session.user!.id!));
+    if (teamIds.length > 0) {
+      await tx.insert(userTeams).values(
+        teamIds.map((teamId) => ({
+          userId: session.user!.id!,
+          teamId,
+        }))
+      );
+    }
+  });
 
   return NextResponse.json({ ok: true });
 }
