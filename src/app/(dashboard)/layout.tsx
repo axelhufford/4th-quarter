@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import { signOut } from "@/lib/auth/auth";
 import { getLiveGameCount } from "@/lib/espn/live-count";
-import { Logo } from "@/components/logo";
+import { Logo, PulseDot } from "@/components/logo";
 import Link from "next/link";
 
 export default async function DashboardLayout({
@@ -19,8 +19,8 @@ export default async function DashboardLayout({
   const liveCount = await getLiveGameCount();
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      <nav className="border-b border-zinc-800 px-6 py-4">
+    <div className="min-h-screen">
+      <nav className="border-b border-zinc-800/80 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <Logo size={26} />
@@ -28,8 +28,8 @@ export default async function DashboardLayout({
           </Link>
           <div className="flex items-center gap-4">
             {liveCount > 0 && (
-              <span className="flex items-center gap-1.5 text-xs text-zinc-400">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+              <span className="flex items-center gap-1.5 text-xs text-zinc-400 tabular-nums">
+                <PulseDot size={6} />
                 {liveCount} {liveCount === 1 ? "game" : "games"} live
               </span>
             )}

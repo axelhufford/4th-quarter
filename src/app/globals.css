@@ -19,8 +19,280 @@
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Design tokens — shadows, easing, gradients, radii                         */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  /* Dark-mode shadows: diffuse blacks, not drop-shadow-y */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.25);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.35), 0 2px 4px -2px rgb(0 0 0 / 0.25);
+  --shadow-lg: 0 16px 40px -12px rgb(0 0 0 / 0.5), 0 4px 12px -4px rgb(0 0 0 / 0.3);
+  --shadow-glow-orange: 0 0 32px -8px rgb(249 115 22 / 0.35), 0 0 12px -4px rgb(249 115 22 / 0.25);
+  --shadow-glow-orange-soft: 0 0 24px -10px rgb(249 115 22 / 0.25);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --radius-sm: 6px;
+  --radius-md: 9px;
+  --radius-lg: 12px;
+
+  /* "Clutch" gradient — orange → red, like a rising score ramp */
+  --gradient-clutch: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+
+  /* Semantic alias — the "something is happening" color */
+  --color-live: #f97316;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Court-lighting glow — scoped to pages that opt in via .hero-glow          */
+/* -------------------------------------------------------------------------- */
+
+.hero-glow {
+  position: relative;
+  isolation: isolate;
+}
+
+.hero-glow::before {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  z-index: -1;
+  left: 50%;
+  top: -15%;
+  transform: translateX(-50%);
+  width: min(1200px, 130vw);
+  height: 820px;
+  background:
+    radial-gradient(
+      ellipse 55% 50% at 50% 38%,
+      rgb(249 115 22 / 0.16) 0%,
+      rgb(249 115 22 / 0.06) 35%,
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 40% 35% at 50% 75%,
+      rgb(239 68 68 / 0.08) 0%,
+      transparent 70%
+    );
+  filter: blur(6px);
+}
+
+@media (max-width: 640px) {
+  .hero-glow::before { opacity: 0.65; }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Typography utilities                                                      */
+/* -------------------------------------------------------------------------- */
+
+.eyebrow {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-live);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Buzzer — refined PulseDot animation                                       */
+/*  The dot itself stays opaque; a radar-ping ring expands behind it.         */
+/* -------------------------------------------------------------------------- */
+
+.buzzer {
+  position: relative;
+  display: inline-block;
+  border-radius: 9999px;
+  background: var(--color-live);
+}
+
+.buzzer::before,
+.buzzer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--color-live);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .buzzer::before {
+    animation: buzzer-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .buzzer::after {
+    animation: buzzer-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+    animation-delay: 0.9s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buzzer::before,
+  .buzzer::after {
+    display: none;
+  }
+}
+
+@keyframes buzzer-ping {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  80%  { transform: scale(2.4); opacity: 0;    }
+  100% { transform: scale(2.4); opacity: 0;    }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Lift — hover/press pattern for buttons and cards                          */
+/* -------------------------------------------------------------------------- */
+
+.lift {
+  transition:
+    transform 160ms var(--ease-out-soft),
+    box-shadow 220ms var(--ease-out-soft),
+    background-color 160ms var(--ease-out-soft),
+    border-color 160ms var(--ease-out-soft);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lift:hover { transform: translateY(-1px); }
+  .lift:active { transform: translateY(0) scale(0.985); }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Clutch gradient — the signature accent, used sparingly                    */
+/* -------------------------------------------------------------------------- */
+
+.clutch-text {
+  background: var(--gradient-clutch);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Fallback if gradient text unsupported */
+  -webkit-text-fill-color: transparent;
+}
+
+.clutch-bg {
+  background: var(--gradient-clutch);
+}
+
+.clutch-cta {
+  background: var(--gradient-clutch);
+  box-shadow: var(--shadow-glow-orange-soft), var(--shadow-sm);
+  transition:
+    transform 160ms var(--ease-out-soft),
+    box-shadow 220ms var(--ease-out-soft),
+    filter 160ms var(--ease-out-soft);
+}
+
+.clutch-cta:hover {
+  box-shadow: var(--shadow-glow-orange), var(--shadow-md);
+  filter: brightness(1.06);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Feature cards — subtle lift + glow on hover                               */
+/* -------------------------------------------------------------------------- */
+
+.feature-card {
+  box-shadow: var(--shadow-md);
+  transition:
+    transform 160ms var(--ease-out-soft),
+    box-shadow 260ms var(--ease-out-soft),
+    border-color 180ms var(--ease-out-soft);
+}
+
+.feature-card:hover {
+  box-shadow: var(--shadow-lg), var(--shadow-glow-orange-soft);
+  border-color: rgb(249 115 22 / 0.22);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Scoreboard — the landing's hero visual                                    */
+/* -------------------------------------------------------------------------- */
+
+.scoreboard-card {
+  box-shadow:
+    var(--shadow-lg),
+    var(--shadow-glow-orange-soft),
+    inset 0 0 0 1px rgb(249 115 22 / 0.12);
+  transition:
+    transform 200ms var(--ease-out-soft),
+    box-shadow 260ms var(--ease-out-soft);
+}
+
+.scoreboard-card:hover {
+  box-shadow:
+    var(--shadow-lg),
+    var(--shadow-glow-orange),
+    inset 0 0 0 1px rgb(249 115 22 / 0.22);
+}
+
+.scoreboard-logo {
+  transition: transform 280ms var(--ease-out-soft);
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scoreboard-card:hover .scoreboard-logo-left { transform: rotate(-2deg); }
+  .scoreboard-card:hover .scoreboard-logo-right { transform: rotate(2deg); }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Team tiles — subtle depth, glow when selected                             */
+/* -------------------------------------------------------------------------- */
+
+.tile-idle {
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 160ms var(--ease-out-soft),
+    box-shadow 220ms var(--ease-out-soft),
+    background-color 160ms var(--ease-out-soft);
+}
+
+.tile-idle:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.tile-selected {
+  box-shadow: var(--shadow-glow-orange-soft), var(--shadow-md);
+  transition:
+    transform 160ms var(--ease-out-soft),
+    box-shadow 220ms var(--ease-out-soft);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  OAuth buttons — lift with depth                                           */
+/* -------------------------------------------------------------------------- */
+
+.oauth-btn {
+  box-shadow: var(--shadow-md);
+}
+
+.oauth-btn:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Accessibility — focus-visible ring                                        */
+/* -------------------------------------------------------------------------- */
+
+:focus-visible {
+  outline: 2px solid rgb(249 115 22 / 0.55);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Buttons and interactive elements often manage their own radius; soften. */
+button:focus-visible,
+a:focus-visible,
+[role="switch"]:focus-visible,
+[role="button"]:focus-visible {
+  outline-offset: 3px;
 }

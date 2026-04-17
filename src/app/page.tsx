@@ -5,16 +5,16 @@ import { getLiveGameCount } from "@/lib/espn/live-count";
 export default async function LandingPage() {
   const liveCount = await getLiveGameCount();
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="hero-glow min-h-screen text-white">
       {/* Nav */}
-      <nav className="flex items-center justify-between px-7 py-5 border-b border-zinc-800">
+      <nav className="flex items-center justify-between px-7 py-5 border-b border-zinc-800/80">
         <div className="flex items-center gap-2.5">
           <Logo size={26} />
           <span className="font-medium text-[15px] tracking-tight">4th Quarter</span>
         </div>
         <div className="flex items-center gap-4">
           {liveCount > 0 && (
-            <div className="hidden sm:flex items-center gap-2 text-xs text-zinc-400">
+            <div className="hidden sm:flex items-center gap-2 text-xs text-zinc-400 tabular-nums">
               <PulseDot />
               {liveCount} {liveCount === 1 ? "game" : "games"} live
             </div>
@@ -27,7 +27,7 @@ export default async function LandingPage() {
           </Link>
           <Link
             href="/login"
-            className="border border-zinc-800 text-white px-3.5 py-1.5 rounded-md text-[13px] hover:bg-zinc-900 transition-colors"
+            className="lift border border-zinc-800 text-white px-3.5 py-1.5 rounded-md text-[13px] hover:bg-zinc-900 hover:border-orange-500/30"
           >
             Sign in
           </Link>
@@ -40,10 +40,10 @@ export default async function LandingPage() {
           <Logo size={88} />
         </div>
 
-        <h1 className="text-5xl sm:text-[54px] font-medium tracking-tight leading-[1.02] mb-[18px]">
+        <h1 className="text-5xl sm:text-[54px] font-semibold tracking-[-0.022em] leading-[1.02] mb-[18px]">
           Skip the first three.
           <br />
-          <span className="text-orange-500">Catch the fourth.</span>
+          <span className="clutch-text">Catch the fourth.</span>
         </h1>
 
         <p className="text-base text-zinc-400 max-w-md mx-auto mb-8 leading-[1.55]">
@@ -54,21 +54,21 @@ export default async function LandingPage() {
         <div className="inline-flex gap-2.5">
           <Link
             href="/login"
-            className="bg-orange-500 text-zinc-950 px-[22px] py-[11px] rounded-md text-sm font-medium hover:bg-orange-400 transition-colors"
+            className="lift clutch-cta text-zinc-950 px-[22px] py-[11px] rounded-md text-sm font-semibold"
           >
             Get started — free
           </Link>
           <a
             href="#how"
-            className="border border-zinc-800 text-white px-[22px] py-[11px] rounded-md text-sm hover:bg-zinc-900 transition-colors"
+            className="lift border border-zinc-800 text-white px-[22px] py-[11px] rounded-md text-sm hover:bg-zinc-900 hover:border-zinc-700"
           >
             How it works
           </a>
         </div>
 
         {/* Sample alert scoreboard */}
-        <div className="mt-12 max-w-lg mx-auto bg-zinc-900 border border-zinc-800 rounded-[10px] px-5 py-4 flex items-center justify-between relative tabular-nums">
-          <div className="absolute top-2 left-3 flex items-center gap-1.5 text-[10px] text-orange-500 tracking-[0.08em]">
+        <div className="scoreboard-card lift mt-12 max-w-lg mx-auto bg-zinc-900/90 border border-zinc-800 rounded-[10px] px-5 py-4 flex items-center justify-between relative tabular-nums">
+          <div className="absolute top-2 left-3 flex items-center gap-1.5 eyebrow">
             <PulseDot size={6} />
             LIVE
           </div>
@@ -77,23 +77,23 @@ export default async function LandingPage() {
             <img
               src="https://a.espncdn.com/i/teamlogos/nba/500/nyk.png"
               alt="New York Knicks"
-              className="w-8 h-8 object-contain"
+              className="scoreboard-logo scoreboard-logo-left w-8 h-8 object-contain"
             />
-            <span className="text-[22px] font-medium tracking-tight">98</span>
+            <span className="text-[22px] font-semibold tabular-nums tracking-tight">98</span>
           </div>
           <div className="text-center mt-3">
-            <div className="text-[11px] text-orange-500 tracking-[0.08em] mb-0.5">
+            <div className="text-[11px] tracking-[0.08em] mb-0.5 clutch-text font-semibold">
               4TH · 9:42
             </div>
             <div className="text-[10px] text-zinc-600">alert sent to you</div>
           </div>
           <div className="flex items-center gap-3 mt-3">
-            <span className="text-[22px] font-medium tracking-tight">94</span>
+            <span className="text-[22px] font-semibold tabular-nums tracking-tight">94</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://a.espncdn.com/i/teamlogos/nba/500/bos.png"
               alt="Boston Celtics"
-              className="w-8 h-8 object-contain"
+              className="scoreboard-logo scoreboard-logo-right w-8 h-8 object-contain"
             />
           </div>
         </div>
@@ -101,12 +101,12 @@ export default async function LandingPage() {
 
       {/* How it works */}
       <section id="how" className="px-7 pb-14 max-w-2xl mx-auto">
-        <h2 className="text-xl font-medium text-center mb-8">How it works</h2>
+        <h2 className="text-xl font-semibold tracking-[-0.015em] text-center mb-8">How it works</h2>
         <div className="space-y-6">
           <Step number="1" title="Sign up for free" desc="Log in with Google or GitHub. No passwords, no credit card." />
           <Step number="2" title="Pick your teams" desc="Choose the NBA teams you follow. One team or all 30 — your call." />
           <Step number="3" title="Choose your alerts" desc="4th quarter starting, close games, tip-off — toggle what matters to you." />
-          <Step number="4" title="Get notified" desc="Push notification or email the moment it happens. Never miss the clutch moments." />
+          <Step number="4" title="Get notified" desc="Push notification or email the moment it happens. Never miss the clutch moments." highlight />
         </div>
       </section>
 
@@ -153,28 +153,42 @@ function FeatureCard({
   live?: boolean;
 }) {
   return (
-    <div className="relative bg-zinc-900 border border-zinc-800 rounded-[9px] p-[18px]">
+    <div className="feature-card lift relative bg-zinc-900/90 border border-zinc-800 rounded-[9px] p-[18px]">
       {live && (
         <span className="absolute top-1/2 right-4 -translate-y-1/2">
           <PulseDot size={6} />
         </span>
       )}
       <div className="mb-3">{icon}</div>
-      <div className="text-sm font-medium mb-1.5">{title}</div>
-      <div className="text-[13px] text-zinc-400 leading-[1.5]">{body}</div>
+      <div className="text-sm font-semibold mb-1.5 tracking-[-0.01em]">{title}</div>
+      <div className="text-[13px] text-zinc-400 leading-[1.55]">{body}</div>
     </div>
   );
 }
 
-function Step({ number, title, desc }: { number: string; title: string; desc: string }) {
+function Step({
+  number,
+  title,
+  desc,
+  highlight = false,
+}: {
+  number: string;
+  title: string;
+  desc: string;
+  highlight?: boolean;
+}) {
   return (
     <div className="flex gap-4 items-start">
-      <div className="w-8 h-8 rounded-full bg-orange-500 text-zinc-950 flex items-center justify-center text-sm font-bold shrink-0">
+      <div
+        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 text-zinc-950 tabular-nums ${
+          highlight ? "clutch-bg shadow-[0_0_24px_-8px_rgb(249_115_22_/_0.5)]" : "bg-orange-500"
+        }`}
+      >
         {number}
       </div>
       <div>
-        <div className="font-medium text-[15px] mb-0.5">{title}</div>
-        <div className="text-sm text-zinc-400 leading-[1.5]">{desc}</div>
+        <div className="font-semibold text-[15px] mb-0.5 tracking-[-0.01em]">{title}</div>
+        <div className="text-sm text-zinc-400 leading-[1.55]">{desc}</div>
       </div>
     </div>
   );

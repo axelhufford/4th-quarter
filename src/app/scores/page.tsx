@@ -219,8 +219,8 @@ export default async function ScoresPage() {
       </nav>
 
       <main className="max-w-2xl mx-auto px-5 py-8">
-        <h1 className="text-2xl font-bold mb-1">Scores & Schedule</h1>
-        <p className="text-zinc-400 text-sm mb-8">Live scores, today&apos;s results, and upcoming games.</p>
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] mb-1">Scores & Schedule</h1>
+        <p className="text-zinc-400 text-sm mb-8 leading-[1.55]">Live scores, today&apos;s results, and upcoming games.</p>
 
         {error ? (
           <div className="text-center py-16 text-zinc-500">
@@ -259,7 +259,7 @@ function GameCard({ game }: { game: Game }) {
     <div className="bg-zinc-900 border border-zinc-800 rounded-[10px] px-5 py-4 flex items-center justify-between relative tabular-nums">
       {/* Status badge */}
       {isLive && (
-        <div className="absolute top-2 left-3 flex items-center gap-1.5 text-[10px] text-orange-500 tracking-[0.08em]">
+        <div className="absolute top-2 left-3 flex items-center gap-1.5 eyebrow">
           <PulseDot size={6} />
           {game.status === "halftime" ? "HALF" : "LIVE"}
         </div>
