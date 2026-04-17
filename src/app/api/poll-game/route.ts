@@ -16,6 +16,8 @@ import { buildNotification } from "@/lib/notifications/templates";
 import { sendPushNotification } from "@/lib/notifications/web-push";
 import { sendEmailNotification } from "@/lib/notifications/email";
 import { verifyCronSecret } from "@/lib/auth/cron";
+import { isBoostEligible, MAX_BOOST_HOPS } from "@/lib/notifications/boost";
+import { scheduleBoostPoll } from "@/lib/qstash/client";
 import type { GameState } from "@/lib/espn/types";
 
 export async function POST(req: NextRequest) {
@@ -25,6 +27,24 @@ export async function POST(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const gameId = searchParams.get("gameId");
+
+  // Parse optional hopCount from request body (set by chained boost polls).
+  // Missing/invalid body means "hop 0" — typical for a manual invocation.
+  let hopCount = 0;
+  try {
+    const raw: unknown = await req.json();
+    if (
+      raw &&
+      typeof raw === "object" &&
+      "hopCount" in raw &&
+      typeof (raw as { hopCount: unknown }).hopCount === "number" &&
+      Number.isInteger((raw as { hopCount: number }).hopCount)
+    ) {
+      hopCount = Math.max(0, (raw as { hopCount: number }).hopCount);
+    }
+  } catch {
+    // No body or non-JSON — treat as manual trigger (hop 0).
+  }
 
   try {
     const scoreboard = await fetchScoreboard();
@@ -185,10 +205,49 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Self-chain: keep polling fast while still in boost window ──
+    // Only runs on single-game invocations (?gameId=X) to avoid double-chaining
+    // with the baseline scheduler on multi-game calls. Each hop schedules one
+    // more 60s-delayed poll of the same game; chain ends when the game leaves
+    // the boost window or MAX_BOOST_HOPS is reached.
+    let nextHopScheduled = false;
+    if (gameId && hopCount + 1 < MAX_BOOST_HOPS) {
+      for (const currentGame of parsedGames) {
+        if (!isBoostEligible(currentGame)) continue;
+
+        // Skip if no user still tracks either team — avoids runaway cost if
+        // a user unfollows mid-game. (The scheduler pre-filters first hops.)
+        const prevState = stateByGameId.get(currentGame.gameId);
+        if (!prevState) continue;
+        const teamIds = [prevState.homeTeamId, prevState.awayTeamId].filter(
+          (id): id is number => id !== null
+        );
+        if (teamIds.length === 0) continue;
+        const tracked = await db
+          .select({ teamId: userTeams.teamId })
+          .from(userTeams)
+          .where(inArray(userTeams.teamId, teamIds))
+          .limit(1);
+        if (tracked.length === 0) continue;
+
+        try {
+          await scheduleBoostPoll(currentGame.gameId, hopCount + 1);
+          nextHopScheduled = true;
+        } catch (err) {
+          console.error(
+            `Failed to self-schedule boost poll for ${currentGame.gameId}:`,
+            err
+          );
+        }
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       gamesPolled: events.length,
       notificationsSent: totalNotifications,
+      hopCount,
+      nextHopScheduled,
     });
   } catch (error) {
     console.error("Poll-game error:", error);

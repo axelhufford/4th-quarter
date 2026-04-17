@@ -17,6 +17,8 @@ import { buildNotification } from "@/lib/notifications/templates";
 import { sendPushNotification } from "@/lib/notifications/web-push";
 import { sendEmailNotification } from "@/lib/notifications/email";
 import { verifyCronSecret } from "@/lib/auth/cron";
+import { isBoostEligible } from "@/lib/notifications/boost";
+import { scheduleBoostPoll } from "@/lib/qstash/client";
 import type { GameState } from "@/lib/espn/types";
 
 export async function POST(req: NextRequest) {
@@ -88,6 +90,16 @@ export async function POST(req: NextRequest) {
       const cur = maxThresholdByTeamId.get(row.teamId) ?? 0;
       if (t > cur) maxThresholdByTeamId.set(row.teamId, t);
     }
+
+    // Tracked team IDs among teams on today's slate (used later for boost dispatch).
+    // Scoped to allDbTeamIds so we don't pull the full user_teams table.
+    const trackedRows = allDbTeamIds.length
+      ? await db
+          .select({ teamId: userTeams.teamId })
+          .from(userTeams)
+          .where(inArray(userTeams.teamId, allDbTeamIds))
+      : [];
+    const trackedTeamIds = new Set(trackedRows.map((r) => r.teamId));
 
     // ── Per-game loop: now uses map lookups instead of queries ──────────
     for (const game of parsedGames) {
@@ -209,10 +221,38 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Adaptive boost: kick off fast per-game polls for late-game tracked games ──
+    // Only dispatch the FIRST hop of the chain here; poll-game re-schedules itself.
+    // Failures are logged and swallowed — the 5-min cron is the safety net.
+    const boostedGameIds: string[] = [];
+    for (const game of parsedGames) {
+      if (!isBoostEligible(game)) continue;
+
+      const homeTeam = teamByEspnId.get(game.homeTeamEspnId);
+      const awayTeam = teamByEspnId.get(game.awayTeamEspnId);
+      const homeTracked = homeTeam ? trackedTeamIds.has(homeTeam.id) : false;
+      const awayTracked = awayTeam ? trackedTeamIds.has(awayTeam.id) : false;
+      if (!homeTracked && !awayTracked) continue;
+
+      try {
+        await scheduleBoostPoll(game.gameId, 0);
+        boostedGameIds.push(game.gameId);
+      } catch (err) {
+        console.error(
+          `Failed to schedule boost poll for ${game.gameId}:`,
+          err
+        );
+      }
+    }
+    if (boostedGameIds.length > 0) {
+      results.push(`Boosted ${boostedGameIds.length} game(s)`);
+    }
+
     return NextResponse.json({
       ok: true,
       gamesProcessed: scoreboard.events.length,
       notificationsSent: totalNotifications,
+      boostedGames: boostedGameIds.length,
       results,
     });
   } catch (error) {
