@@ -30,16 +30,19 @@ async function saveTeams(teamIds: number[]) {
   const uniqueIds = Array.from(new Set(teamIds)).slice(0, 30);
   const userId = session.user.id;
 
-  // Atomic: delete + insert in a transaction so a failed insert
-  // doesn't leave the user with zero team selections
-  await db.transaction(async (tx) => {
-    await tx.delete(userTeams).where(eq(userTeams.userId, userId));
-    if (uniqueIds.length > 0) {
-      await tx.insert(userTeams).values(
-        uniqueIds.map((teamId) => ({ userId, teamId }))
-      );
-    }
-  });
+  // Atomic via db.batch() — neon-http doesn't support db.transaction(),
+  // but batch runs all statements in a single server-side transaction.
+  if (uniqueIds.length > 0) {
+    await db.batch([
+      db.delete(userTeams).where(eq(userTeams.userId, userId)),
+      db
+        .insert(userTeams)
+        .values(uniqueIds.map((teamId) => ({ userId, teamId }))),
+    ]);
+  } else {
+    // Clearing all teams — single statement, no batch needed
+    await db.delete(userTeams).where(eq(userTeams.userId, userId));
+  }
 }
 
 export default async function DashboardPage() {

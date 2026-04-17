@@ -33,19 +33,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid team IDs" }, { status: 400 });
   }
 
-  // Atomic: delete + insert in a transaction so a failed insert
-  // doesn't leave the user with zero team selections
-  await db.transaction(async (tx) => {
-    await tx.delete(userTeams).where(eq(userTeams.userId, session.user!.id!));
-    if (teamIds.length > 0) {
-      await tx.insert(userTeams).values(
-        teamIds.map((teamId) => ({
-          userId: session.user!.id!,
-          teamId,
-        }))
-      );
-    }
-  });
+  // Atomic via db.batch() — neon-http doesn't support db.transaction(),
+  // but batch runs all statements in a single server-side transaction.
+  const userId = session.user.id;
+  if (teamIds.length > 0) {
+    await db.batch([
+      db.delete(userTeams).where(eq(userTeams.userId, userId)),
+      db
+        .insert(userTeams)
+        .values(teamIds.map((teamId) => ({ userId, teamId }))),
+    ]);
+  } else {
+    await db.delete(userTeams).where(eq(userTeams.userId, userId));
+  }
 
   return NextResponse.json({ ok: true });
 }
