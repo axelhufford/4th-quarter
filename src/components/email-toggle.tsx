@@ -11,7 +11,9 @@ export function EmailToggle({ enabled: initialEnabled, email }: EmailToggleProps
   const [enabled, setEnabled] = useState(initialEnabled);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<
+    { kind: "sent" } | { kind: "failed"; message: string } | null
+  >(null);
 
   const toggle = async () => {
     const newValue = !enabled;
@@ -37,10 +39,19 @@ export function EmailToggle({ enabled: initialEnabled, email }: EmailToggleProps
     setTestResult(null);
     try {
       const res = await fetch("/api/test-email", { method: "POST" });
-      const data = await res.json();
-      setTestResult(data.success ? "sent" : "failed");
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setTestResult({ kind: "sent" });
+      } else {
+        // Surface the server's message (covers 429 cooldown, 500, etc.)
+        // so users don't just see "Failed" when it's a temporary limit.
+        setTestResult({
+          kind: "failed",
+          message: data.error || "Failed — try again",
+        });
+      }
     } catch {
-      setTestResult("failed");
+      setTestResult({ kind: "failed", message: "Failed — try again" });
     }
     setTesting(false);
   };
@@ -88,10 +99,10 @@ export function EmailToggle({ enabled: initialEnabled, email }: EmailToggleProps
         >
           {testing
             ? "Sending..."
-            : testResult === "sent"
+            : testResult?.kind === "sent"
             ? "✓ Test email sent! Check your inbox"
-            : testResult === "failed"
-            ? "Failed — try again"
+            : testResult?.kind === "failed"
+            ? testResult.message
             : "Send Test Email"}
         </button>
       )}
