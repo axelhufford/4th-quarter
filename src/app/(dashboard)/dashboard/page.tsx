@@ -12,17 +12,34 @@ import { parseEvent } from "@/lib/espn/parse";
 async function saveTeams(teamIds: number[]) {
   "use server";
   const session = await auth();
-  if (!session?.user?.id) return;
-
-  await db.delete(userTeams).where(eq(userTeams.userId, session.user.id));
-  if (teamIds.length > 0) {
-    await db.insert(userTeams).values(
-      teamIds.map((teamId) => ({
-        userId: session.user!.id!,
-        teamId,
-      }))
-    );
+  if (!session?.user?.id) {
+    // Throw so the client's try/catch surfaces the error instead of
+    // showing "Saved!" on a silent no-op.
+    throw new Error("Not authenticated");
   }
+
+  // Validate: must be an array of positive integers
+  if (
+    !Array.isArray(teamIds) ||
+    !teamIds.every((id) => Number.isInteger(id) && id > 0)
+  ) {
+    throw new Error("Invalid team IDs");
+  }
+
+  // Dedupe and cap — there are only 30 NBA teams
+  const uniqueIds = Array.from(new Set(teamIds)).slice(0, 30);
+  const userId = session.user.id;
+
+  // Atomic: delete + insert in a transaction so a failed insert
+  // doesn't leave the user with zero team selections
+  await db.transaction(async (tx) => {
+    await tx.delete(userTeams).where(eq(userTeams.userId, userId));
+    if (uniqueIds.length > 0) {
+      await tx.insert(userTeams).values(
+        uniqueIds.map((teamId) => ({ userId, teamId }))
+      );
+    }
+  });
 }
 
 export default async function DashboardPage() {

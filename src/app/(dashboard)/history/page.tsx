@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db/client";
 import { notificationLog } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, ne, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -50,7 +50,13 @@ export default async function HistoryPage({
   const logs = await db
     .select()
     .from(notificationLog)
-    .where(eq(notificationLog.userId, session.user.id))
+    .where(
+      and(
+        eq(notificationLog.userId, session.user.id),
+        // test_email rows exist only for rate-limiting; don't show them
+        ne(notificationLog.eventType, "test_email")
+      )
+    )
     .orderBy(desc(notificationLog.sentAt))
     .limit(PER_PAGE + 1)
     .offset(offset);

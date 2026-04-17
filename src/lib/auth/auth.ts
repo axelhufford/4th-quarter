@@ -9,8 +9,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [Google, GitHub],
   session: { strategy: "jwt" },
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       if (!user.email || !account) return false;
+
+      // Reject unverified Google emails — Google OAuth can surface
+      // unverified school/work aliases that an attacker could claim.
+      // (GitHub only returns verified primary emails so no check needed.)
+      if (
+        account.provider === "google" &&
+        profile &&
+        (profile as { email_verified?: boolean }).email_verified === false
+      ) {
+        return false;
+      }
 
       // Upsert user
       const existing = await db

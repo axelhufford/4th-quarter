@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export function NotificationBell() {
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const [subscribing, setSubscribing] = useState(false);
+  const [testStatus, setTestStatus] = useState<string | null>(null);
 
-  useEffect(() => {
+  const checkPermission = useCallback(() => {
+    if (typeof window === "undefined") return;
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
       setPermission("unsupported");
       return;
@@ -14,9 +16,28 @@ export function NotificationBell() {
     setPermission(Notification.permission);
   }, []);
 
+  useEffect(() => {
+    checkPermission();
+
+    // Re-check permission when tab regains focus so UI stays accurate
+    // if the user revokes access in browser settings and comes back.
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") checkPermission();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [checkPermission]);
+
   const subscribe = async () => {
     setSubscribing(true);
     try {
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) {
+        alert("Push notifications aren't configured on this server. Please contact support.");
+        setSubscribing(false);
+        return;
+      }
+
       // Register service worker
       const registration = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
@@ -33,12 +54,12 @@ export function NotificationBell() {
       // Subscribe to push
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        applicationServerKey: vapidKey,
       });
 
       // Send subscription to server
       const sub = subscription.toJSON();
-      await fetch("/api/subscribe", {
+      const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -46,8 +67,13 @@ export function NotificationBell() {
           keys: sub.keys,
         }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Couldn't save your subscription. Please try again.");
+      }
     } catch (err) {
       console.error("Push subscription failed:", err);
+      alert("Couldn't enable push notifications. Please try again.");
     }
     setSubscribing(false);
   };
@@ -76,12 +102,17 @@ export function NotificationBell() {
 
   const sendTest = async () => {
     setSubscribing(true);
+    setTestStatus(null);
     try {
       const res = await fetch("/api/test-notification", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) alert(data.error || "Failed to send test");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTestStatus(data.error || "Failed to send test");
+      } else {
+        setTestStatus(`Sent to ${data.sent} of ${data.total} device${data.total === 1 ? "" : "s"}`);
+      }
     } catch {
-      alert("Failed to send test notification");
+      setTestStatus("Failed to send test notification");
     }
     setSubscribing(false);
   };
@@ -91,15 +122,27 @@ export function NotificationBell() {
       <div className="space-y-3">
         <div className="p-4 rounded-lg bg-green-900/30 border border-green-700/30 text-green-400 text-sm flex items-center gap-2">
           <span className="text-lg">&#x2713;</span>
-          Notifications enabled — you'll be alerted when your games matter!
+          Notifications enabled — you&apos;ll be alerted when your games matter!
         </div>
         <button
           onClick={sendTest}
           disabled={subscribing}
           className="w-full p-3 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium hover:bg-zinc-700 disabled:opacity-50 transition-colors"
         >
-          {subscribing ? "Sending..." : "Send Test Notification"}
+          {subscribing ? "Sending..." : testStatus ?? "Send Test Notification"}
         </button>
+      </div>
+    );
+  }
+
+  if (permission === "denied") {
+    return (
+      <div className="p-4 rounded-lg bg-zinc-800 text-zinc-400 text-sm">
+        <p className="font-semibold text-zinc-200 mb-1">Notifications are blocked</p>
+        <p>
+          Enable them in your browser settings (lock icon in the address bar →
+          allow notifications), then reload this page.
+        </p>
       </div>
     );
   }

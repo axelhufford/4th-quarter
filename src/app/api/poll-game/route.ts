@@ -15,14 +15,11 @@ import { detectTriggers, dedupKey, EventType } from "@/lib/notifications/trigger
 import { buildNotification } from "@/lib/notifications/templates";
 import { sendPushNotification } from "@/lib/notifications/web-push";
 import { sendEmailNotification } from "@/lib/notifications/email";
+import { verifyCronSecret } from "@/lib/auth/cron";
 import type { GameState } from "@/lib/espn/types";
 
 export async function POST(req: NextRequest) {
-  // Verify cron secret (used by both QStash and manual triggers)
-  const secret =
-    req.headers.get("x-cron-secret") ||
-    req.headers.get("authorization")?.replace("Bearer ", "");
-  if (secret !== process.env.CRON_SECRET) {
+  if (!verifyCronSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
