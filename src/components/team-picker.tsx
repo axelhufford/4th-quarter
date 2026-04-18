@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PulseDot } from "@/components/logo";
 
 interface Team {
   id: number;
@@ -106,10 +107,10 @@ function TeamButton({ team, selected, live, onToggle }: { team: Team; selected: 
   return (
     <button
       onClick={onToggle}
-      className={`relative flex flex-col items-center gap-1.5 px-3 py-3 rounded-lg text-sm font-medium transition-all ${
+      className={`lift relative flex flex-col items-center gap-1.5 px-3 py-3 rounded-lg text-sm font-medium ${
         selected
-          ? "bg-orange-500 text-white ring-2 ring-orange-400"
-          : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+          ? "tile-selected bg-orange-500 text-white ring-2 ring-orange-400"
+          : "tile-idle bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
       }`}
     >
       {team.logoUrl ? (
@@ -125,7 +126,9 @@ function TeamButton({ team, selected, live, onToggle }: { team: Team; selected: 
       )}
       <span className="text-[11px]">{team.abbreviation}</span>
       {live && (
-        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+        <span className="absolute top-1 right-1">
+          <PulseDot size={6} />
+        </span>
       )}
     </button>
   );

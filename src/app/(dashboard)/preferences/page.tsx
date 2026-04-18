@@ -23,8 +23,8 @@ export default async function PreferencesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white mb-1">Alert Settings</h1>
-        <p className="text-zinc-400">
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-white mb-1">Alert Settings</h1>
+        <p className="text-zinc-400 leading-[1.55]">
           Choose which game moments trigger a notification.
         </p>
       </div>

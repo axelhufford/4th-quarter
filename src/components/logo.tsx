@@ -47,8 +47,9 @@ export function Logo({ size = 32, background = "dark", className }: LogoProps) {
 }
 
 /**
- * The "buzzer" — a pulsing orange dot used anywhere something is live, active,
- * or alerting. Pairs with the Logo as a secondary brand signal.
+ * The "buzzer" — an orange dot with a soft radar-ping used anywhere something
+ * is live, active, or alerting. Pairs with the Logo as a secondary brand
+ * signal. Ring animation is gated behind prefers-reduced-motion.
  */
 type PulseDotProps = {
   size?: number;
@@ -58,7 +59,7 @@ type PulseDotProps = {
 export function PulseDot({ size = 7, className }: PulseDotProps) {
   return (
     <span
-      className={`inline-block rounded-full bg-orange-500 animate-pulse ${className ?? ""}`}
+      className={`buzzer ${className ?? ""}`}
       style={{ width: size, height: size }}
       aria-hidden="true"
     />

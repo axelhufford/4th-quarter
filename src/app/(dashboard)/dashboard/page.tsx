@@ -80,16 +80,16 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white mb-1">
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-white mb-1">
           Welcome{session.user.name ? `, ${session.user.name.split(" ")[0]}` : ""}
         </h1>
-        <p className="text-zinc-400">
+        <p className="text-zinc-400 leading-[1.55]">
           Pick your teams and we'll notify you when the action heats up.
         </p>
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">
+        <h2 className="text-lg font-semibold tracking-[-0.015em] text-white mb-4">
           Enable Notifications
         </h2>
         <div className="space-y-4">
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">
+        <h2 className="text-lg font-semibold tracking-[-0.015em] text-white mb-4">
           Your Teams
         </h2>
         <TeamPicker

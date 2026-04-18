@@ -67,10 +67,10 @@ export default async function HistoryPage({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white mb-1">
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-white mb-1">
           Notification History
         </h1>
-        <p className="text-zinc-400">
+        <p className="text-zinc-400 leading-[1.55]">
           Recent alerts sent to you.
         </p>
       </div>
