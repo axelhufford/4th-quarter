@@ -1,11 +1,9 @@
 // Adaptive boost polling — shared eligibility check.
 //
-// A game is "boost-eligible" when it's close enough to a user-visible trigger
-// moment (halftime_ending, 4th_quarter, close_game, overtime, game_ended) that
-// the 5-min baseline cron's worst-case lag would feel bad.
-//
-// We intentionally do NOT look at the clock — period + status are enough and
-// keep the check cheap. The 5-min cron still runs as a safety net in case the
+// A game is "boost-eligible" any time it's live (in_progress or halftime).
+// The 60s chain engages from tip-off so every in-game transition
+// (halftime_ending, 4th_quarter, close_game, overtime, game_ended) is caught
+// within ~60s. The 5-min baseline cron remains a safety net in case the
 // chain drops.
 
 interface GameLike {
@@ -14,10 +12,8 @@ interface GameLike {
 }
 
 export function isBoostEligible(game: GameLike): boolean {
-  // Halftime: next ESPN update will flip to Q3 and fire halftime_ending.
   if (game.status === "halftime") return true;
-  // Q3 onward (while playing): catches 4th_quarter, close_game, overtime, game_ended.
-  if (game.status === "in_progress" && game.period >= 3) return true;
+  if (game.status === "in_progress") return true;
   return false;
 }
 

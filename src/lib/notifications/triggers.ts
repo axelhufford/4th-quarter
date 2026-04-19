@@ -46,8 +46,13 @@ export function detectTriggers(
     }
   }
 
-  // 4th quarter starting: period changed from 3 to 4
-  if (prev.period <= 3 && current.period >= 4) {
+  // 4th quarter starting: fire as early as the Q3-end break (STATUS_END_PERIOD
+  // with period 3) so users get ~2-3 min of lead time over the Q4-tip edge.
+  // Dedup key "4th_quarter" is period-agnostic (see dedupKey), so firing on
+  // the Q3-end edge suppresses a second fire when period later flips to 4.
+  const q3Ending = current.endOfPeriod && current.period === 3;
+  const enteredQ4 = prev.period <= 3 && current.period >= 4;
+  if (q3Ending || enteredQ4) {
     if (!sent.has("4th_quarter")) {
       triggered.push("4th_quarter");
     }

@@ -43,6 +43,7 @@ export function parseEvent(event: ESPNEvent): GameState {
       event.status.type.completed
     ),
     period: event.status.period ?? 0,
+    endOfPeriod: event.status.type.name === "STATUS_END_PERIOD",
     homeTeamEspnId: home.team.id,
     homeTeamName: home.team.displayName,
     homeTeamAbbr: home.team.abbreviation,
