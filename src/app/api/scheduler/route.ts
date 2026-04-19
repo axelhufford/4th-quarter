@@ -353,19 +353,25 @@ async function sendNotificationsForEvent(
       )
     );
 
-  for (const user of emailUsers) {
-    const result = await sendEmailNotification(user.email, {
-      title: payload.title,
-      body: payload.body,
-    });
+  const emailBatchSize = 50;
+  for (let i = 0; i < emailUsers.length; i += emailBatchSize) {
+    const batch = emailUsers.slice(i, i + emailBatchSize);
+    await Promise.allSettled(
+      batch.map(async (user) => {
+        const result = await sendEmailNotification(user.email, {
+          title: payload.title,
+          body: payload.body,
+        });
 
-    await db.insert(notificationLog).values({
-      userId: user.id,
-      gameId,
-      eventType: `${eventType}_email`,
-      payload,
-      delivered: result.success,
-      errorMessage: result.success ? null : "Email delivery failed",
-    });
+        await db.insert(notificationLog).values({
+          userId: user.id,
+          gameId,
+          eventType: `${eventType}_email`,
+          payload,
+          delivered: result.success,
+          errorMessage: result.success ? null : "Email delivery failed",
+        });
+      })
+    );
   }
 }

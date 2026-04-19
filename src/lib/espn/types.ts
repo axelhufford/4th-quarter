@@ -42,6 +42,9 @@ export interface GameState {
   gameId: string;
   status: "scheduled" | "in_progress" | "halftime" | "finished";
   period: number;
+  // True when ESPN reports STATUS_END_PERIOD (between quarters). Used to
+  // fire the 4th_quarter notification at Q3 end instead of waiting for Q4 tip.
+  endOfPeriod: boolean;
   homeTeamEspnId: string;
   homeTeamName: string;
   homeTeamAbbr: string;
