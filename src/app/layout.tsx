@@ -76,7 +76,20 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-950 text-white">{children}</body>
+      <body className="min-h-full flex flex-col bg-zinc-950 text-white">
+        <div className="flex-1">{children}</div>
+        <footer className="px-7 py-3 text-center text-[11px] text-zinc-600">
+          a website by{" "}
+          <a
+            href="https://axelhufford.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-zinc-400 transition-colors underline-offset-2 hover:underline"
+          >
+            Axel Hufford
+          </a>
+        </footer>
+      </body>
     </html>
   );
 }
