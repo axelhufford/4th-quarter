@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     for (const event of events) {
       try {
         const game = parseEvent(event);
-        if (game.status === "scheduled") continue;
+        if (game.status === "scheduled" && !isBoostEligible(game)) continue;
         parsedGames.push(game);
       } catch (err) {
         console.error("Failed to parse ESPN event", event.id, err);
