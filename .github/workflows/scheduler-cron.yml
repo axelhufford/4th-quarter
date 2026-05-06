@@ -1,0 +1,28 @@
+name: scheduler-cron
+
+# Hits /api/scheduler every 5 min. Vercel Hobby blocks cron schedules
+# tighter than daily, so the scheduler trigger lives here instead.
+# A failed run sends email to the repo owner automatically.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: # manual trigger from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: POST /api/scheduler
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET secret is not set."
+            exit 1
+          fi
+          curl -fsS --max-time 60 -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            https://4th-quarter-sooty.vercel.app/api/scheduler
