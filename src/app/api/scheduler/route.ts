@@ -10,6 +10,7 @@ import {
   notificationPreferences,
   pushSubscriptions,
   notificationLog,
+  cronHeartbeat,
 } from "@/lib/db/schema";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { detectTriggers, dedupKey, EventType } from "@/lib/notifications/triggers";
@@ -248,6 +249,18 @@ export async function POST(req: NextRequest) {
       results.push(`Boosted ${boostedGameIds.length} game(s)`);
     }
 
+    // Heartbeat for /api/health — only updated on successful completion.
+    // A stale heartbeat means the scheduler stopped running OR is failing
+    // mid-run; both are signals the watchdog should fire on.
+    const now = new Date();
+    await db
+      .insert(cronHeartbeat)
+      .values({ id: 1, lastRunAt: now })
+      .onConflictDoUpdate({
+        target: cronHeartbeat.id,
+        set: { lastRunAt: now },
+      });
+
     return NextResponse.json({
       ok: true,
       gamesProcessed: scoreboard.events.length,
@@ -263,6 +276,11 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+// Vercel Cron Jobs send GET; the POST handler doesn't read the request body,
+// so the same logic serves both verbs. cron-job.org (if kept as a backup)
+// continues to work via POST + x-cron-secret header.
+export const GET = POST;
 
 // ── Send push + email notifications ────────────────────────────────────
 async function sendNotificationsForEvent(

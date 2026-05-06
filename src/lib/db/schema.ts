@@ -126,3 +126,11 @@ export const notificationLog = pgTable("notification_log", {
   errorMessage: text("error_message"),
   sentAt: timestamp("sent_at").defaultNow().notNull(),
 });
+
+// ── Cron heartbeat (single row; bumped at the end of every successful scheduler run) ──
+// Read by /api/health to detect a silent scheduler death — distinct from
+// game_states.last_polled_at, which only moves when ESPN returns games.
+export const cronHeartbeat = pgTable("cron_heartbeat", {
+  id: integer("id").primaryKey(), // always 1
+  lastRunAt: timestamp("last_run_at").notNull(),
+});
