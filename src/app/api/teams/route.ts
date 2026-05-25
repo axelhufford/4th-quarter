@@ -33,19 +33,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid team IDs" }, { status: 400 });
   }
 
-  // Atomic via db.batch() — neon-http doesn't support db.transaction(),
-  // but batch runs all statements in a single server-side transaction.
+  // Atomic transaction: delete existing subscriptions then insert the new set.
   const userId = session.user.id;
-  if (teamIds.length > 0) {
-    await db.batch([
-      db.delete(userTeams).where(eq(userTeams.userId, userId)),
-      db
+  await db.transaction(async (tx) => {
+    await tx.delete(userTeams).where(eq(userTeams.userId, userId));
+    if (teamIds.length > 0) {
+      await tx
         .insert(userTeams)
-        .values(teamIds.map((teamId) => ({ userId, teamId }))),
-    ]);
-  } else {
-    await db.delete(userTeams).where(eq(userTeams.userId, userId));
-  }
+        .values(teamIds.map((teamId) => ({ userId, teamId })));
+    }
+  });
 
   return NextResponse.json({ ok: true });
 }

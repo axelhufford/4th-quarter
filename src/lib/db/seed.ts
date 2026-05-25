@@ -1,5 +1,5 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { teams } from "./schema";
 import { NBA_TEAMS } from "../nba-teams";
 
@@ -15,8 +15,8 @@ function logoUrl(abbreviation: string): string {
 }
 
 async function seed() {
-  const sql = neon(process.env.DATABASE_URL!);
-  const db = drizzle(sql);
+  const client = postgres(process.env.DATABASE_URL!, { prepare: false });
+  const db = drizzle(client);
 
   console.log("Seeding NBA teams...");
 

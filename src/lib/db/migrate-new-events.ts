@@ -1,5 +1,5 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { users, notificationPreferences } from "./schema";
 import { eq } from "drizzle-orm";
 
@@ -10,8 +10,8 @@ import { eq } from "drizzle-orm";
  * Run: npx tsx src/lib/db/migrate-new-events.ts
  */
 async function migrate() {
-  const sql = neon(process.env.DATABASE_URL!);
-  const db = drizzle(sql);
+  const client = postgres(process.env.DATABASE_URL!, { prepare: false });
+  const db = drizzle(client);
 
   const allUsers = await db.select({ id: users.id }).from(users);
   console.log(`Found ${allUsers.length} users`);
