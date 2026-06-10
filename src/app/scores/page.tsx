@@ -60,22 +60,24 @@ function parseGame(event: import("@/lib/espn/types").ESPNEvent): Game {
   };
 }
 
+// NBA schedule days follow Eastern Time; the server runs in UTC, where the
+// calendar date is already "tomorrow" during evening games. All day math
+// below must therefore be done in ET, not server-local time.
+function etDateKey(d: Date): string {
+  // en-CA formats as YYYY-MM-DD
+  return d.toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+}
+
 function formatDate(offset: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0, 10).replace(/-/g, "");
+  const d = new Date(Date.now() + offset * 86_400_000);
+  return etDateKey(d).replace(/-/g, "");
 }
 
 function dayLabel(dateStr: string): string {
-  const d = new Date(dateStr + "T12:00:00");
-  const today = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(today.getDate() + 1);
+  if (dateStr === etDateKey(new Date())) return "Today";
+  if (dateStr === etDateKey(new Date(Date.now() + 86_400_000))) return "Tomorrow";
 
-  if (d.toDateString() === today.toDateString()) return "Today";
-  if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow";
-
-  return d.toLocaleDateString("en-US", {
+  return new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -104,7 +106,7 @@ interface DayGames {
 
 export default async function ScoresPage() {
   const session = await auth();
-  let days: DayGames[] = [];
+  const days: DayGames[] = [];
   let liveCount = 0;
   let hasLive = false;
   let error = false;
@@ -118,26 +120,30 @@ export default async function ScoresPage() {
       (g) => g.status === "in_progress" || g.status === "halftime"
     );
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-
     if (todayGames.length > 0) {
       const sorted = [...todayGames].sort((a, b) => {
         const order = { in_progress: 0, halftime: 0, scheduled: 1, finished: 2 };
         return order[a.status] - order[b.status];
       });
-      days.push({ dateKey: todayStr, label: "Today", games: sorted });
+      // ESPN's default scoreboard isn't always ET-today: late at night it
+      // rolls to the next slate. Label by the slate's actual date so we never
+      // call tomorrow's games "Today".
+      const slateKey = etDateKey(new Date(todayData.events[0].date));
+      days.push({ dateKey: slateKey, label: dayLabel(slateKey), games: sorted });
     }
 
-    // If no live games, fetch upcoming days
+    // If no live games, fetch upcoming days (skipping any day already shown)
     if (!hasLive) {
+      const seenDates = new Set(days.map((d) => d.dateKey));
       for (let i = 1; i <= 3; i++) {
         try {
           const dateStr = formatDate(i);
+          const isoKey = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+          if (seenDates.has(isoKey)) continue;
           const data = await fetchScoreboard(dateStr);
           if (data.events.length > 0) {
             const games = data.events.map(parseGame);
-            const label = dayLabel(dateStr.slice(0, 4) + "-" + dateStr.slice(4, 6) + "-" + dateStr.slice(6, 8));
-            days.push({ dateKey: dateStr, label, games });
+            days.push({ dateKey: isoKey, label: dayLabel(isoKey), games });
           }
         } catch {
           // Skip days that fail

@@ -35,14 +35,22 @@ export async function POST(req: Request) {
 
   // Atomic transaction: delete existing subscriptions then insert the new set.
   const userId = session.user.id;
-  await db.transaction(async (tx) => {
-    await tx.delete(userTeams).where(eq(userTeams.userId, userId));
-    if (teamIds.length > 0) {
-      await tx
-        .insert(userTeams)
-        .values(teamIds.map((teamId) => ({ userId, teamId })));
+  try {
+    await db.transaction(async (tx) => {
+      await tx.delete(userTeams).where(eq(userTeams.userId, userId));
+      if (teamIds.length > 0) {
+        await tx
+          .insert(userTeams)
+          .values(teamIds.map((teamId) => ({ userId, teamId })));
+      }
+    });
+  } catch (err) {
+    // FK violation (23503) means a teamId doesn't exist — caller error, not ours.
+    if ((err as { code?: string }).code === "23503") {
+      return NextResponse.json({ error: "Unknown team ID" }, { status: 400 });
     }
-  });
+    throw err;
+  }
 
   return NextResponse.json({ ok: true });
 }

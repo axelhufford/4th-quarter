@@ -59,7 +59,7 @@ export default async function DashboardPage() {
     .where(eq(users.id, session.user.id));
 
   // Get ESPN IDs of teams currently playing
-  let liveEspnIds: string[] = [];
+  const liveEspnIds: string[] = [];
   try {
     const scoreboard = await fetchScoreboard();
     const liveStatuses = new Set(["in_progress", "halftime"]);
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
           Welcome{session.user.name ? `, ${session.user.name.split(" ")[0]}` : ""}
         </h1>
         <p className="text-zinc-400 leading-[1.55]">
-          Pick your teams and we'll notify you when the action heats up.
+          Pick your teams and we&apos;ll notify you when the action heats up.
         </p>
       </div>
 

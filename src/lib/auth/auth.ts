@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
 import { db } from "@/lib/db/client";
-import { users, accounts, sessions, notificationPreferences } from "@/lib/db/schema";
+import { users, accounts, notificationPreferences } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({

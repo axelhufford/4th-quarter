@@ -50,9 +50,11 @@ export function detectTriggers(
   // with period 3) so users get ~2-3 min of lead time over the Q4-tip edge.
   // Dedup key "4th_quarter" is period-agnostic (see dedupKey), so firing on
   // the Q3-end edge suppresses a second fire when period later flips to 4.
+  // Status guard: without it, a game that jumps from Q3 straight to finished
+  // between polls (e.g. after a scheduler outage) would fire a stale alert.
   const q3Ending = current.endOfPeriod && current.period === 3;
   const enteredQ4 = prev.period <= 3 && current.period >= 4;
-  if (q3Ending || enteredQ4) {
+  if ((q3Ending || enteredQ4) && current.status === "in_progress") {
     if (!sent.has("4th_quarter")) {
       triggered.push("4th_quarter");
     }

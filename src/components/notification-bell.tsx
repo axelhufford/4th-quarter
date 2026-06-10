@@ -1,32 +1,34 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useSyncExternalStore } from "react";
+
+// Notification.permission is external browser state, so we mirror it with
+// useSyncExternalStore instead of effect-synced useState. Re-checks happen
+// when the tab regains visibility (covers revoking access in browser
+// settings) and on any re-render (covers requestPermission resolving).
+function subscribePermission(onChange: () => void) {
+  const onVisibility = () => {
+    if (document.visibilityState === "visible") onChange();
+  };
+  document.addEventListener("visibilitychange", onVisibility);
+  return () => document.removeEventListener("visibilitychange", onVisibility);
+}
+
+function getPermission(): NotificationPermission | "unsupported" {
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    return "unsupported";
+  }
+  return Notification.permission;
+}
 
 export function NotificationBell() {
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
+  const permission = useSyncExternalStore(
+    subscribePermission,
+    getPermission,
+    () => "default" as const
+  );
   const [subscribing, setSubscribing] = useState(false);
   const [testStatus, setTestStatus] = useState<string | null>(null);
-
-  const checkPermission = useCallback(() => {
-    if (typeof window === "undefined") return;
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-      setPermission("unsupported");
-      return;
-    }
-    setPermission(Notification.permission);
-  }, []);
-
-  useEffect(() => {
-    checkPermission();
-
-    // Re-check permission when tab regains focus so UI stays accurate
-    // if the user revokes access in browser settings and comes back.
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") checkPermission();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [checkPermission]);
 
   const subscribe = async () => {
     setSubscribing(true);
@@ -42,9 +44,9 @@ export function NotificationBell() {
       const registration = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
 
-      // Request notification permission
+      // Request notification permission. No manual state update needed:
+      // the setSubscribing re-render below re-reads Notification.permission.
       const perm = await Notification.requestPermission();
-      setPermission(perm);
 
       if (perm !== "granted") {
         setSubscribing(false);

@@ -22,7 +22,9 @@ jobs:
             echo "::error::CRON_SECRET secret is not set."
             exit 1
           fi
-          curl -fsS --max-time 60 -X POST \
+          # Retries are safe: the scheduler dedupes notification sends via
+          # compare-and-swap on game_states.notifications_sent.
+          curl -fsS --max-time 60 --retry 3 --retry-all-errors --retry-delay 5 -X POST \
             -H "Authorization: Bearer $CRON_SECRET" \
             -H "Content-Type: application/json" \
             https://4th-quarter-sooty.vercel.app/api/scheduler
