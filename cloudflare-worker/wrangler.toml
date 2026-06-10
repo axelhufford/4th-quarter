@@ -1,0 +1,12 @@
+name = "4q-scheduler-cron"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# */5 means every 5 minutes. Cloudflare honors this reliably on the free
+# tier; the 100k requests/day quota easily covers ~288 invocations/day.
+[triggers]
+crons = ["*/5 * * * *"]
+
+# CRON_SECRET is set as an encrypted secret via:
+#   npx wrangler secret put CRON_SECRET
+# Do NOT put the secret in this file.
